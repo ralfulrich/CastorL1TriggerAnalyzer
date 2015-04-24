@@ -93,6 +93,8 @@ import CastorL1TriggerAnalyzer.CastorMkL1TestTree.CastorMkL1TestTree_cfi
 process.castormkl1testtree = CastorL1TriggerAnalyzer.CastorMkL1TestTree.CastorMkL1TestTree_cfi.castormkl1testtree.clone()
 process.castormkl1testtree.ShowDebugInfo   = cms.bool(True)
 process.castormkl1testtree.ShowTriggerMenu = cms.bool(True)
+process.castormkl1testtree.HLTpaths        = cms.vstring('HLT_Random_v1',
+                                                         'HLT_ZeroBias_v1')
 #################################################################################################################################
 
 
