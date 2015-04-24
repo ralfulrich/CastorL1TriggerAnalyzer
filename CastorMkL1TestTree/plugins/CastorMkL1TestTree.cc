@@ -24,6 +24,7 @@
 #include <map>
 #include <bitset>
 #include <string>
+#include <utility>
 
 // include root files
 #include "TH1.h"
@@ -203,6 +204,9 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
 
       edm::Handle< edm::TriggerResults >            TrigResults;
       edm::Handle<reco::VertexCollection>           VertexColl;
+
+      // --------- other variables -----------------------
+      std::vector<std::string> HLT_path_names;
 
       // --------- tree variables ------------------------
       TTree* myTree;
@@ -435,6 +439,8 @@ CastorMkL1TestTree::GetParameterSet(const edm::ParameterSet& iConfig)
 
   TrigResults_      = iConfig.getParameter<edm::InputTag>("TrigResults");
   VertexColl_       = iConfig.getParameter<edm::InputTag>("VertexColl");
+
+  HLT_path_names    = iConfig.getParameter< std::vector<std::string> >("HLTpaths");
 }
 
 bool 
@@ -594,51 +600,32 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
   }
   
 
+  if( HLT_path_names.size() > 64 ) {
+    std::cerr << "*** (HLT) Number of HLT paths of interest to high to save in tree" << std::endl;
+    return;
+  }
+  std::vector< std::pair<bool,int> > HLT_path_bits;
+  HLT_path_bits.resize( HLT_path_names.size(), std::pair<bool,int>(false,-1) );
+
   bool changedConfig = false;
-  // int triggerBits[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
   if (!hltConfig.init(iEvent.getRun(), iConfig, "HLT", changedConfig)) {
     std::cerr << "*** (HLT) Initialization of HLTConfigProvider failed!!" << std::endl;
     return;
   }
-  for (size_t j = 0; j < hltConfig.triggerNames().size(); j++) {
-    // if (TString(hltConfig.triggerNames()[j]).Contains("HLT_L1Tech61_CASTORJet_v1") ) 
-    //   triggerBits[0] = j;
-    // else if( TString(hltConfig.triggerNames()[j]).Contains("HLT_L1Tech62_CASTORJet_SinglePFJet15_v1") )
-    //   triggerBits[1] = j;
-    // else if( TString(hltConfig.triggerNames()[j]).Contains("HLT_L1Tech62_CASTORJet_SinglePFJet40_v1") )
-    //   triggerBits[2] = j;
-    // else if( TString(hltConfig.triggerNames()[j]).Contains("HLT_L1Tech62_CASTORJet_SingleMuon5_v1") )
-    //   triggerBits[3] = j;
-    // else if( TString(hltConfig.triggerNames()[j]).Contains("HLT_L1Tech62_CASTORJet_SingleMuon10_v1") )
-    //   triggerBits[4] = j;
-    // else if( TString(hltConfig.triggerNames()[j]).Contains("HLT_L1Tech60_CASTORGap_IsoMu5_v1") )
-    //   triggerBits[5] = j;
-    // else if( TString(hltConfig.triggerNames()[j]).Contains("HLT_L1Tech62_CASTORGap_SingleMuon5_v1") )
-    //   triggerBits[6] = j;
-
+  for (size_t iBitHLT = 0; iBitHLT < hltConfig.triggerNames().size(); iBitHLT++) {
+    for(size_t iHLTpath = 0; iHLTpath < HLT_path_names.size(); iHLTpath++)
+      if( TString(hltConfig.triggerNames()[iBitHLT]).Contains(HLT_path_names[iHLTpath].c_str()) ) {
+        HLT_path_bits[iHLTpath].first  = true;
+        HLT_path_bits[iHLTpath].second = iBitHLT;
+      }
+    
     if( show_trigger_menu ) {
-      HLT_Menu[j] = std::string(hltConfig.triggerNames()[j]);
+      HLT_Menu[iBitHLT] = std::string(hltConfig.triggerNames()[iBitHLT]);
     }
   }
-  // for(int i = 0; i < 7; i++) {
-  //   if( triggerBits[i] == -1 ) {
-  //     std::cerr << "*** (HLT) HLT path not found" << std::endl;
-  //     return;
-  //   }
-  // }
-  // else {
-  //   // std::cout << "HLT Bit : " << triggerBits[0] << " and " << triggerBits[1] << std::endl;
-  //   // std::cout << "TrigResults size : " << TrigResults->size() << std::endl;
-  //   // std::cout << "Decision: " << TrigResults->accept(triggerBits[0]) << " and " << TrigResults->accept(triggerBits[1]) << std::endl;
-  // }
-  // HLTBits[0] = TrigResults->accept(triggerBits[0]);  // HLT_L1Tech61_CASTORJet_v1
-  // HLTBits[1] = TrigResults->accept(triggerBits[1]);  // HLT_L1Tech61_CASTORJet_SinglePFJet20_v1
-  // HLTBits[2] = TrigResults->accept(triggerBits[2]);  // HLT_L1Tech62_CASTORJet_SinglePFJet40_v1
-  // HLTBits[3] = TrigResults->accept(triggerBits[3]);  // HLT_L1Tech62_CASTORJet_SingleMuon5_v1
-  // HLTBits[4] = TrigResults->accept(triggerBits[4]);  // HLT_L1Tech62_CASTORJet_SingleMuon10_v1
-  // HLTBits[5] = TrigResults->accept(triggerBits[5]);  // HLT_L1Tech60_CASTORGap_IsoMu5_v1
-  // HLTBits[6] = TrigResults->accept(triggerBits[6]);  // HLT_L1Tech60_CASTORGap_SingleMuon5_v1
-
+  for(size_t iHLTpath = 0; iHLTpath < HLT_path_bits.size(); iHLTpath++) {
+    if( HLT_path_bits[iHLTpath].first == true ) HLTBits[iHLTpath] = TrigResults->accept( HLT_path_bits[iHLTpath].second );
+  }
   
   CastorL1DecisionWord = (ULong64_t)CastorL1Bits.to_ulong();
   AlgoJetDecisionWord1 = (ULong64_t)AlgoJetBits_lowRange.to_ulong();
