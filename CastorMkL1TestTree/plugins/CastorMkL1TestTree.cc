@@ -171,8 +171,8 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
       bool GetGeometry(const edm::EventSetup& iSetup);
 
       void GetTriggerInfo(const edm::Event&, const edm::EventSetup&);
-      void GetL1TriggerInfo(const edm::Event&, const edm::EventSetup&, std::bitset<64>&, std::bitset<64>&, std::bitset<64>&);
-      void GetHLTriggerInfo(const edm::Event&, const edm::EventSetup&, std::bitset<64>&);
+      void GetL1TriggerInfo(const edm::Event&, const edm::EventSetup&);
+      void GetHLTriggerInfo(const edm::Event&, const edm::EventSetup&);
 
       int  GetPileUp(edm::Handle< std::vector<PileupSummaryInfo> >& vPU);
 
@@ -184,6 +184,10 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
       // --------- flags ---------------------------------
       bool show_debug_info;
       bool show_trigger_menu;
+
+      std::bitset<64> L1TTBits;
+      std::bitset<64> AlgoBits_lowRange, AlgoBits_upperRange;
+      std::bitset<64> HLTBits;
 
       // --------- input labels for collections ----------
       edm::InputTag PileUpInfo_;
@@ -568,10 +572,12 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
     HLT_Menu.clear();
   }
 
-  std::bitset<64> L1TTBits, AlgoBits_lowRange, AlgoBits_upperRange, HLTBits;
+  L1TTBits.reset();
+  AlgoBits_lowRange.reset(); AlgoBits_upperRange.reset();
+  HLTBits.reset();
 
-  GetL1TriggerInfo(iEvent,iConfig,L1TTBits,AlgoBits_lowRange,AlgoBits_upperRange);
-  GetHLTriggerInfo(iEvent,iConfig,HLTBits);
+  GetL1TriggerInfo(iEvent,iConfig);
+  GetHLTriggerInfo(iEvent,iConfig);
 
   CastorL1DecisionWord = (ULong64_t)L1TTBits.to_ulong();
   AlgoJetDecisionWord1 = (ULong64_t)AlgoBits_lowRange.to_ulong();
@@ -596,9 +602,7 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
 }
 
 void 
-CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig,
-                                     std::bitset<64>& L1TTBits, 
-                                     std::bitset<64>& AlgoBits_lowRange, std::bitset<64>& AlgoBits_upperRange)
+CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig)
 {
   bool useL1EventSetup = true;
   bool useL1GtTriggerMenuLite = true;
@@ -614,6 +618,7 @@ CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventS
   const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
   const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
 
+  if( show_debug_info ) std::cout << "*** (DEBUG) AlgorithmMap size: " << algorithmMap.size() << std::endl;
   for(CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber         = ( itAlgo->second ).algoBitNumber();
@@ -628,7 +633,7 @@ CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventS
     else AlgoBits_upperRange[algoBitNumber-64] = decision;
   }
 
-
+if( show_debug_info ) std::cout << "*** (DEBUG) TechnicalTriggerMap size: " << technicalTriggerMap.size() << std::endl;
   for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber         = ( itAlgo->second ).algoBitNumber();
@@ -645,8 +650,7 @@ CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventS
 }
 
 void 
-CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig,
-                                     std::bitset<64>& HLTBits)
+CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig)
 {
   if( show_debug_info ) std::cout << "*** (DEBUG) HLT_path_names.size() = " << HLT_path_names.size() << std::endl;
   if( HLT_path_names.size() > 64 ) {
