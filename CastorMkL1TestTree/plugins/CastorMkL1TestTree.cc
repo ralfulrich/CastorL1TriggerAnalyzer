@@ -176,6 +176,12 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
 
       int  GetPileUp(edm::Handle< std::vector<PileupSummaryInfo> >& vPU);
 
+      void CollectGenParticles();
+      void CollectGenJets();
+      void CollectCasRecHits();
+      void CollectCasJets();
+      void CollectVertices();
+
       // ----------member data ---------------------------
       const CaloGeometry * geo;
       L1GtUtils m_l1GtUtils;
@@ -289,118 +295,25 @@ CastorMkL1TestTree::~CastorMkL1TestTree()
 void
 CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-   using namespace edm;
-
-     using namespace edm;
-
-  num_pu_vtx = 0;
-
-  fspart->Clear();
-  genjet->Clear();
-  casjet->Clear();
-  vertex->Clear();
-
-  fspart_size = 0;
-  genjet_size = 0;  
-  casjet_size = 0;
-  vertex_size = 0;
+  using namespace edm;
 
   // Get all necessary collections
   if( !GetCollections(iEvent) ) return;
   
+  num_pu_vtx = 0;
   num_pu_vtx = GetPileUp(PileUpInfo);
   
-  totem_mpl[0] = 0; totem_mpl[1] = 0;
+  CollectGenParticles();
+  CollectGenJets();
+  CollectCasRecHits();
+  CollectCasJets();
+  CollectVertices();
 
-  // GenParticles
-  for(size_t i=0; i < GenPartColl->size(); i++)
-    {
-      const reco::GenParticle & genpart = (*GenPartColl)[i];
-  
-      if( genpart.status() != 1 )
-        continue;
-
-      // only t2 acceptance
-      if( std::abs(genpart.eta()) > 5.4 && std::abs(genpart.eta()) < 6.6 &&
-          genpart.charge() != 0 )
-      {
-        if( genpart.eta() > 0 ) totem_mpl[0]++;
-        else totem_mpl[1]++;
-      }
-
-      // if( std::abs(genpart.pdgId()) != 13 )
-      //   continue;
-
-      TVector3 gp_mom(genpart.px(), genpart.py(), genpart.pz());
-      double gp_m = genpart.mass();
-
-      TLorentzVector lvgenpart; lvgenpart.SetVectM( gp_mom, gp_m );
-
-      if( fspart_size < max_genpart_size ) {
-        new((*fspart)[fspart_size]) TLorentzVector(lvgenpart);
-        fspart_id[fspart_size] = genpart.pdgId();
-      }
-
-      fspart_size++;
-    }
-
-
-  for(size_t i=0; i < GenJetColl->size(); i++)
-  {
-    const reco::GenJet & jet = (*GenJetColl)[i];
-
-    TLorentzVector lvjet( jet.px(), jet.py(), jet.pz(), jet.energy() );
-
-    if( genjet_size < max_jet_size ) new((*genjet)[genjet_size]) TLorentzVector(lvjet);
-    genjet_size++;
-  }
-
-  // Get CastorRecHits
-  for (size_t i = 0; i < CasRecHitColl->size(); i++)
-    {
-      const CastorRecHit & rh = (*CasRecHitColl)[i];
-      int isec = rh.id().sector()-1;
-      int imod = rh.id().module()-1;
-      cas_energy[isec][imod] = rh.energy();
-    }
-
-  // Get CastorJets
-  for(size_t i = 0; i < BasicJetView->size(); i++)
-    {
-      const reco::BasicJet & basicjet = (*BasicJetView)[i];
-      // edm::RefToBase<reco::BasicJet> jetRef = BasicJetView->refAt(i);
-      // reco::CastorJetID const & jetId = (*CasJetIdMap)[jetRef];
-
-      TLorentzVector lvjet( basicjet.px(), basicjet.py(), basicjet.pz(), basicjet.energy() );
-      
-      if( casjet_size < max_jet_size ) new((*casjet)[casjet_size]) TLorentzVector(lvjet);
-      casjet_size++;
-    }
-
-  
   CastorL1DecisionWord = 0;
   AlgoJetDecisionWord1 = 0;
   AlgoJetDecisionWord2 = 0;
   HLTDecisionWord = 0;
   GetTriggerInfo(iEvent,iSetup);
-  
-  // Get Vertices
-  for(size_t i = 0; i < VertexColl->size(); i++)
-    {
-      const reco::Vertex & vtx = (*VertexColl)[i];
-
-      //if( !vtx.isValid() || vtx.isFake() ) continue;
-
-      TVector3 vVtx( vtx.x(), vtx.y(), vtx.z() );
-
-      if( vertex_size < max_vtx_size ) {
-        new((*vertex)[vertex_size]) TVector3(vVtx);
-        vtx_ndof[vertex_size] = vtx.ndof();
-        vtx_fake[vertex_size] = vtx.isFake() ? 1 : 0;
-        vtx_fake[vertex_size] += vtx.isValid() ? 2 : 0;
-      }
-      vertex_size++;
-    }
 
   myTree->Fill();
 }
@@ -582,7 +495,14 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
   CastorL1DecisionWord = (ULong64_t)L1TTBits.to_ulong();
   AlgoJetDecisionWord1 = (ULong64_t)AlgoBits_lowRange.to_ulong();
   AlgoJetDecisionWord2 = (ULong64_t)AlgoBits_upperRange.to_ulong();
-  HLTDecisionWord      = (ULong64_t)HLTBits.to_ulong(); 
+  HLTDecisionWord      = (ULong64_t)HLTBits.to_ulong();
+
+  if( show_debug_info ) {
+    std::cout << "*** (DEBUG) L1TTBits = " << L1TTBits << " = " << CastorL1DecisionWord << std::endl;
+    std::cout << "*** (DEBUG) AlgoBits_lowRange = " << AlgoBits_lowRange << " = " << AlgoJetDecisionWord1 << std::endl;
+    std::cout << "*** (DEBUG) AlgoBits_upperRange = " << AlgoBits_upperRange << " = " << AlgoJetDecisionWord2 << std::endl;
+    std::cout << "*** (DEBUG) HLTBits = " << HLTBits << " = " << HLTDecisionWord << std::endl;
+  }
 
   if( show_trigger_menu ) {
     std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
@@ -699,6 +619,122 @@ CastorMkL1TestTree::GetPileUp(edm::Handle< std::vector<PileupSummaryInfo> >& vPU
   }
 
   return -1;
+}
+
+void
+CastorMkL1TestTree::CollectGenParticles()
+{
+  fspart->Clear();
+  fspart_size = 0;
+
+  totem_mpl[0] = 0; totem_mpl[1] = 0;
+
+  // GenParticles
+  for(size_t i=0; i < GenPartColl->size(); i++)
+    {
+      const reco::GenParticle & genpart = (*GenPartColl)[i];
+  
+      if( genpart.status() != 1 )
+        continue;
+
+      // only t2 acceptance
+      if( std::abs(genpart.eta()) > 5.4 && std::abs(genpart.eta()) < 6.6 &&
+          genpart.charge() != 0 )
+      {
+        if( genpart.eta() > 0 ) totem_mpl[0]++;
+        else totem_mpl[1]++;
+      }
+
+      // if( std::abs(genpart.pdgId()) != 13 )
+      //   continue;
+
+      TVector3 gp_mom(genpart.px(), genpart.py(), genpart.pz());
+      double gp_m = genpart.mass();
+
+      TLorentzVector lvgenpart; lvgenpart.SetVectM( gp_mom, gp_m );
+
+      if( fspart_size < max_genpart_size ) {
+        new((*fspart)[fspart_size]) TLorentzVector(lvgenpart);
+        fspart_id[fspart_size] = genpart.pdgId();
+      }
+
+      fspart_size++;
+    }
+}
+
+void
+CastorMkL1TestTree::CollectGenJets()
+{
+  genjet->Clear();
+  genjet_size = 0;
+
+  for(size_t i=0; i < GenJetColl->size(); i++)
+  {
+    const reco::GenJet & jet = (*GenJetColl)[i];
+
+    TLorentzVector lvjet( jet.px(), jet.py(), jet.pz(), jet.energy() );
+
+    if( genjet_size < max_jet_size ) new((*genjet)[genjet_size]) TLorentzVector(lvjet);
+    genjet_size++;
+  }
+}
+
+void 
+CastorMkL1TestTree::CollectCasRecHits()
+{
+  // Get CastorRecHits
+  for (size_t i = 0; i < CasRecHitColl->size(); i++)
+    {
+      const CastorRecHit & rh = (*CasRecHitColl)[i];
+      int isec = rh.id().sector()-1;
+      int imod = rh.id().module()-1;
+      cas_energy[isec][imod] = rh.energy();
+    }
+}
+
+void 
+CastorMkL1TestTree::CollectCasJets()
+{
+  casjet->Clear();
+  casjet_size = 0;
+
+  // Get CastorJets
+  for(size_t i = 0; i < BasicJetView->size(); i++)
+    {
+      const reco::BasicJet & basicjet = (*BasicJetView)[i];
+      // edm::RefToBase<reco::BasicJet> jetRef = BasicJetView->refAt(i);
+      // reco::CastorJetID const & jetId = (*CasJetIdMap)[jetRef];
+
+      TLorentzVector lvjet( basicjet.px(), basicjet.py(), basicjet.pz(), basicjet.energy() );
+      
+      if( casjet_size < max_jet_size ) new((*casjet)[casjet_size]) TLorentzVector(lvjet);
+      casjet_size++;
+    }
+}
+
+void
+CastorMkL1TestTree::CollectVertices()
+{
+  vertex->Clear();
+  vertex_size = 0;
+
+  // Get Vertices
+  for(size_t i = 0; i < VertexColl->size(); i++)
+    {
+      const reco::Vertex & vtx = (*VertexColl)[i];
+
+      //if( !vtx.isValid() || vtx.isFake() ) continue;
+
+      TVector3 vVtx( vtx.x(), vtx.y(), vtx.z() );
+
+      if( vertex_size < max_vtx_size ) {
+        new((*vertex)[vertex_size]) TVector3(vVtx);
+        vtx_ndof[vertex_size] = vtx.ndof();
+        vtx_fake[vertex_size] = vtx.isFake() ? 1 : 0;
+        vtx_fake[vertex_size] += vtx.isValid() ? 2 : 0;
+      }
+      vertex_size++;
+    }
 }
 
 // ------------ method called once each job just before starting event loop  ------------
