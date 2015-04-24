@@ -165,10 +165,15 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
 
       // --------- user functions ------------------------
       void GetParameterSet(const edm::ParameterSet& iConfig);
+      void SetupTree();
+
       bool GetCollections(const edm::Event& iEvent);
       bool GetGeometry(const edm::EventSetup& iSetup);
 
-      void GetL1TTriggerInfo(const edm::Event&, const edm::EventSetup&);
+      void GetTriggerInfo(const edm::Event&, const edm::EventSetup&);
+      void GetL1TriggerInfo(const edm::Event&, const edm::EventSetup&, std::bitset<64>&, std::bitset<64>&, std::bitset<64>&);
+      void GetHLTriggerInfo(const edm::Event&, const edm::EventSetup&, std::bitset<64>&);
+
       int  GetPileUp(edm::Handle< std::vector<PileupSummaryInfo> >& vPU);
 
       // ----------member data ---------------------------
@@ -208,6 +213,10 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
 
       // --------- other variables -----------------------
       std::vector<std::string> HLT_path_names;
+
+      std::map<int,std::string> L1TT_Menu;
+      std::map<int,std::string> L1Algo_Menu;
+      std::map<int,std::string> HLT_Menu;
 
       // --------- tree variables ------------------------
       TTree* myTree;
@@ -255,36 +264,7 @@ CastorMkL1TestTree::CastorMkL1TestTree(const edm::ParameterSet& iConfig)
 {
   //now do what ever initialization is needed
   GetParameterSet(iConfig);
-
-  edm::Service<TFileService> fs;
-
-  myTree = fs->make<TTree>("myTree","myTree");
-
-  fspart = new TClonesArray("TLorentzVector", max_genpart_size );
-  genjet = new TClonesArray("TLorentzVector", max_jet_size );
-  casjet = new TClonesArray("TLorentzVector", max_jet_size );
-  vertex = new TClonesArray("TVector3" , max_vtx_size );
-
-  myTree->Branch("num_pu_vtx" , &num_pu_vtx , "num_pu_vtx/I");
-
-  myTree->Branch("fspart", "TClonesArray" , &fspart , 32000, 0);
-  myTree->Branch("genjet", "TClonesArray" , &genjet , 32000, 0);
-  myTree->Branch("casjet", "TClonesArray" , &casjet , 32000, 0);
-  myTree->Branch("vertex", "TClonesArray" , &vertex , 32000, 0);
-  myTree->Branch("fspart_size" , &fspart_size , "fspart_size/I");
-  myTree->Branch("genjet_size" , &genjet_size , "genjet_size/I");
-  myTree->Branch("casjet_size" , &casjet_size , "casjet_size/I");
-  myTree->Branch("vertex_size" , &vertex_size , "vertex_size/I");
-  myTree->Branch("cas_energy" , &cas_energy , "cas_energy[16][14]/D");
-  myTree->Branch("fspart_id" , &fspart_id , "fspart_id[fspart_size]/I");
-  myTree->Branch("vtx_ndof" , &vtx_ndof , "vtx_ndof[vertex_size]/I");
-  myTree->Branch("vtx_fake" , &vtx_fake , "vtx_fake[vertex_size]/I");
-  myTree->Branch("totem_mpl" , &totem_mpl , "totem_mpl[2]/I");
-  
-  myTree->Branch("CastorL1DecisionWord" , &CastorL1DecisionWord , "CastorL1DecisionWord/l");
-  myTree->Branch("AlgoJetDecisionWord1" , &AlgoJetDecisionWord1 , "AlgoJetDecisionWord1/l");
-  myTree->Branch("AlgoJetDecisionWord2" , &AlgoJetDecisionWord2 , "AlgoJetDecisionWord2/l");
-  myTree->Branch("HLTDecisionWord" , &HLTDecisionWord , "HLTDecisionWord/l");
+  SetupTree();
 }
 
 
@@ -398,7 +378,7 @@ CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   AlgoJetDecisionWord1 = 0;
   AlgoJetDecisionWord2 = 0;
   HLTDecisionWord = 0;
-  GetL1TTriggerInfo(iEvent,iSetup);
+  GetTriggerInfo(iEvent,iSetup);
   
   // Get Vertices
   for(size_t i = 0; i < VertexColl->size(); i++)
@@ -421,7 +401,8 @@ CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   myTree->Fill();
 }
 
-// ------------ methods to get detector collections --------------------------------------
+
+// ------------ method to get parameter set from config ---------------------------------
 void
 CastorMkL1TestTree::GetParameterSet(const edm::ParameterSet& iConfig)
 {
@@ -443,6 +424,42 @@ CastorMkL1TestTree::GetParameterSet(const edm::ParameterSet& iConfig)
   VertexColl_       = iConfig.getParameter<edm::InputTag>("VertexColl");
 
   HLT_path_names    = iConfig.getParameter< std::vector<std::string> >("HLTpaths");
+}
+
+
+// ------------ method to setup tree ----------------------------------------------------
+void
+CastorMkL1TestTree::SetupTree()
+{
+  edm::Service<TFileService> fs;
+
+  myTree = fs->make<TTree>("myTree","myTree");
+
+  fspart = new TClonesArray("TLorentzVector", max_genpart_size );
+  genjet = new TClonesArray("TLorentzVector", max_jet_size );
+  casjet = new TClonesArray("TLorentzVector", max_jet_size );
+  vertex = new TClonesArray("TVector3" , max_vtx_size );
+
+  myTree->Branch("num_pu_vtx" , &num_pu_vtx , "num_pu_vtx/I");
+
+  myTree->Branch("fspart", "TClonesArray" , &fspart , 32000, 0);
+  myTree->Branch("genjet", "TClonesArray" , &genjet , 32000, 0);
+  myTree->Branch("casjet", "TClonesArray" , &casjet , 32000, 0);
+  myTree->Branch("vertex", "TClonesArray" , &vertex , 32000, 0);
+  myTree->Branch("fspart_size" , &fspart_size , "fspart_size/I");
+  myTree->Branch("genjet_size" , &genjet_size , "genjet_size/I");
+  myTree->Branch("casjet_size" , &casjet_size , "casjet_size/I");
+  myTree->Branch("vertex_size" , &vertex_size , "vertex_size/I");
+  myTree->Branch("cas_energy" , &cas_energy , "cas_energy[16][14]/D");
+  myTree->Branch("fspart_id" , &fspart_id , "fspart_id[fspart_size]/I");
+  myTree->Branch("vtx_ndof" , &vtx_ndof , "vtx_ndof[vertex_size]/I");
+  myTree->Branch("vtx_fake" , &vtx_fake , "vtx_fake[vertex_size]/I");
+  myTree->Branch("totem_mpl" , &totem_mpl , "totem_mpl[2]/I");
+  
+  myTree->Branch("CastorL1DecisionWord" , &CastorL1DecisionWord , "CastorL1DecisionWord/l");
+  myTree->Branch("AlgoJetDecisionWord1" , &AlgoJetDecisionWord1 , "AlgoJetDecisionWord1/l");
+  myTree->Branch("AlgoJetDecisionWord2" , &AlgoJetDecisionWord2 , "AlgoJetDecisionWord2/l");
+  myTree->Branch("HLTDecisionWord" , &HLTDecisionWord , "HLTDecisionWord/l");
 }
 
 bool 
@@ -543,14 +560,46 @@ CastorMkL1TestTree::GetGeometry(const edm::EventSetup& iSetup)
 }
 
 void 
-CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig)
-{
-  std::map<int,std::string> L1TT_Menu;
-  std::map<int,std::string> L1Algo_Menu;
-  std::map<int,std::string> HLT_Menu;
- 
-  std::bitset<64> CastorL1Bits, AlgoJetBits_lowRange, AlgoJetBits_upperRange, HLTBits;
+CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig)
+{ 
+  if( show_trigger_menu ) {
+    L1TT_Menu.clear();
+    L1Algo_Menu.clear();
+    HLT_Menu.clear();
+  }
 
+  std::bitset<64> L1TTBits, AlgoBits_lowRange, AlgoBits_upperRange, HLTBits;
+
+  GetL1TriggerInfo(iEvent,iConfig,L1TTBits,AlgoBits_lowRange,AlgoBits_upperRange);
+  GetHLTriggerInfo(iEvent,iConfig,HLTBits);
+
+  CastorL1DecisionWord = (ULong64_t)L1TTBits.to_ulong();
+  AlgoJetDecisionWord1 = (ULong64_t)AlgoBits_lowRange.to_ulong();
+  AlgoJetDecisionWord2 = (ULong64_t)AlgoBits_upperRange.to_ulong();
+  HLTDecisionWord      = (ULong64_t)HLTBits.to_ulong(); 
+
+  if( show_trigger_menu ) {
+    std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
+    for(std::map<int,std::string>::iterator it = L1TT_Menu.begin(); it != L1TT_Menu.end(); it++)
+      std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
+
+    std::cout << "*** L1 Algorith Menu ***" << std::endl;
+    for(std::map<int,std::string>::iterator it = L1Algo_Menu.begin(); it != L1Algo_Menu.end(); it++)
+      std::cout << "   *** L1 Algo Bit[" << it->first << "] = " << it->second << std::endl;    
+
+    std::cout << "*** HLT Menu ***" << std::endl;
+    for(std::map<int,std::string>::iterator it = HLT_Menu.begin(); it != HLT_Menu.end(); it++)
+      std::cout << "   *** HLT Bit[" << it->first << "] = " << it->second << std::endl;        
+
+    show_trigger_menu = false;
+  }
+}
+
+void 
+CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig,
+                                     std::bitset<64>& L1TTBits, 
+                                     std::bitset<64>& AlgoBits_lowRange, std::bitset<64>& AlgoBits_upperRange)
+{
   bool useL1EventSetup = true;
   bool useL1GtTriggerMenuLite = true;
 
@@ -564,44 +613,41 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
   const L1GtTriggerMenu* m_l1GtMenu          = m_l1GtUtils.ptrL1TriggerMenuEventSetup(iErrorCode);
   const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
   const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
-  // const std::string&     menuName     = m_l1GtMenu->gtTriggerMenuName();
 
   for(CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber         = ( itAlgo->second ).algoBitNumber();
-    // bool algResultBeforeMask = m_l1GtUtils.decisionBeforeMask(iEvent, itAlgo->first, iErrorCode);
-    // bool algResultAfterMask  = m_l1GtUtils.decisionAfterMask (iEvent, itAlgo->first, iErrorCode);
-    // int  triggerMask         = m_l1GtUtils.triggerMask       (iEvent, itAlgo->first, iErrorCode);
-    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode); //function identical with decisionAfterMask
-    // int  preScale            = m_l1GtUtils.prescaleFactor    (iEvent, itAlgo->first, iErrorCode);
-    // if (iErrorCode == 0 && decisionMaskAlgTechTrig)
+    //function identical with decisionAfterMask
+    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1Algo_Menu[algoBitNumber] = algName;
     }
 
-    if( algoBitNumber < 64 ) AlgoJetBits_lowRange[algoBitNumber] = decision;
-    else AlgoJetBits_upperRange[algoBitNumber-64] = decision;
+    if( algoBitNumber < 64 ) AlgoBits_lowRange[algoBitNumber] = decision;
+    else AlgoBits_upperRange[algoBitNumber-64] = decision;
   }
 
 
   for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber         = ( itAlgo->second ).algoBitNumber();
-    // bool algResultBeforeMask = m_l1GtUtils.decisionBeforeMask(iEvent, itAlgo->first, iErrorCode);
-    // bool algResultAfterMask  = m_l1GtUtils.decisionAfterMask (iEvent, itAlgo->first, iErrorCode);
-    // int  triggerMask         = m_l1GtUtils.triggerMask       (iEvent, itAlgo->first, iErrorCode);
     bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
-    // int  preScale            = m_l1GtUtils.prescaleFactor    (iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
     }
 
-    CastorL1Bits[algoBitNumber] = decision;
+    L1TTBits[algoBitNumber] = decision;
   }
   
 
+}
+
+void 
+CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig,
+                                     std::bitset<64>& HLTBits)
+{
   if( show_debug_info ) std::cout << "*** (DEBUG) HLT_path_names.size() = " << HLT_path_names.size() << std::endl;
   if( HLT_path_names.size() > 64 ) {
     std::cerr << "*** (HLT) Number of HLT paths of interest to high to save in tree" << std::endl;
@@ -636,27 +682,6 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
                     << "]: " << HLT_path_names[iHLTpath] << " = " << 0 << std::endl;
       HLTBits[iHLTpath] = TrigResults->accept( HLT_path_bits[iHLTpath].second );
     }
-  }
-  
-  CastorL1DecisionWord = (ULong64_t)CastorL1Bits.to_ulong();
-  AlgoJetDecisionWord1 = (ULong64_t)AlgoJetBits_lowRange.to_ulong();
-  AlgoJetDecisionWord2 = (ULong64_t)AlgoJetBits_upperRange.to_ulong();
-  HLTDecisionWord      = (ULong64_t)HLTBits.to_ulong(); 
-
-  if( show_trigger_menu ) {
-    std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
-    for(std::map<int,std::string>::iterator it = L1TT_Menu.begin(); it != L1TT_Menu.end(); it++)
-      std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
-
-    std::cout << "*** L1 Algorith Menu ***" << std::endl;
-    for(std::map<int,std::string>::iterator it = L1Algo_Menu.begin(); it != L1Algo_Menu.end(); it++)
-      std::cout << "   *** L1 Algo Bit[" << it->first << "] = " << it->second << std::endl;    
-
-    std::cout << "*** HLT Menu ***" << std::endl;
-    for(std::map<int,std::string>::iterator it = HLT_Menu.begin(); it != HLT_Menu.end(); it++)
-      std::cout << "   *** HLT Bit[" << it->first << "] = " << it->second << std::endl;        
-
-    show_trigger_menu = false;
   }
 }
 
