@@ -602,6 +602,7 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
   }
   
 
+  if( show_debug_info ) std::cout << "*** (DEBUG) HLT_path_names.size() = " << HLT_path_names.size() << std::endl;
   if( HLT_path_names.size() > 64 ) {
     std::cerr << "*** (HLT) Number of HLT paths of interest to high to save in tree" << std::endl;
     return;
@@ -617,6 +618,9 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
   for (size_t iBitHLT = 0; iBitHLT < hltConfig.triggerNames().size(); iBitHLT++) {
     for(size_t iHLTpath = 0; iHLTpath < HLT_path_names.size(); iHLTpath++)
       if( TString(hltConfig.triggerNames()[iBitHLT]).Contains(HLT_path_names[iHLTpath].c_str()) ) {
+        if( show_debug_info ) 
+          std::cout << "*** (DEBUG) HLT path: " << HLT_path_names[iHLTpath] 
+                    << " found for HLT bit: " << iBitHLT << std::endl;
         HLT_path_bits[iHLTpath].first  = true;
         HLT_path_bits[iHLTpath].second = iBitHLT;
       }
@@ -626,8 +630,12 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
     }
   }
   for(size_t iHLTpath = 0; iHLTpath < HLT_path_bits.size(); iHLTpath++) {
-    if( HLT_path_bits[iHLTpath].first == true )
+    if( HLT_path_bits[iHLTpath].first == true ) {
+      if( show_debug_info ) 
+          std::cout << "*** (DEBUG) HLT[" <<  HLT_path_bits[iHLTpath].second
+                    << "]: " << HLT_path_names[iHLTpath] << " = " << 0 << std::endl;
       HLTBits[iHLTpath] = TrigResults->accept( HLT_path_bits[iHLTpath].second );
+    }
   }
   
   CastorL1DecisionWord = (ULong64_t)CastorL1Bits.to_ulong();
