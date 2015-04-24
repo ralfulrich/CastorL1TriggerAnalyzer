@@ -177,6 +177,7 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
       HLTConfigProvider hltConfig;
 
       // --------- flags ---------------------------------
+      bool show_debug_info;
       bool show_trigger_menu;
 
       // --------- input labels for collections ----------
@@ -425,6 +426,7 @@ void
 CastorMkL1TestTree::GetParameterSet(const edm::ParameterSet& iConfig)
 {
   // get flags
+  show_debug_info   = iConfig.getParameter<bool>("ShowDebugInfo");
   show_trigger_menu = iConfig.getParameter<bool>("ShowTriggerMenu");
 
   // define collections
@@ -624,7 +626,8 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
     }
   }
   for(size_t iHLTpath = 0; iHLTpath < HLT_path_bits.size(); iHLTpath++) {
-    if( HLT_path_bits[iHLTpath].first == true ) HLTBits[iHLTpath] = TrigResults->accept( HLT_path_bits[iHLTpath].second );
+    if( HLT_path_bits[iHLTpath].first == true )
+      HLTBits[iHLTpath] = TrigResults->accept( HLT_path_bits[iHLTpath].second );
   }
   
   CastorL1DecisionWord = (ULong64_t)CastorL1Bits.to_ulong();
