@@ -1,6 +1,8 @@
 import FWCore.ParameterSet.Config as cms
 
 castormkl1testtree = cms.EDAnalyzer('CastorMkL1TestTree',
+    ShowTriggerMenu  = cms.bool(True),
+
     PileUpInfo       = cms.InputTag('addPileupInfo','','HLT'),
     GenPartColl      = cms.InputTag('genParticles'),
     GenJetColl       = cms.InputTag('ak5GenJets'),

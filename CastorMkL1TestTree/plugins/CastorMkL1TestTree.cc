@@ -163,7 +163,7 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // --------- user functions ------------------------
-      void GetCollectionsLabel(const edm::ParameterSet& iConfig);
+      void GetParameterSet(const edm::ParameterSet& iConfig);
       bool GetCollections(const edm::Event& iEvent);
       bool GetGeometry(const edm::EventSetup& iSetup);
 
@@ -174,6 +174,9 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
       const CaloGeometry * geo;
       L1GtUtils m_l1GtUtils;
       HLTConfigProvider hltConfig;
+
+      // --------- flags ---------------------------------
+      bool show_trigger_menu;
 
       // --------- input labels for collections ----------
       edm::InputTag PileUpInfo_;
@@ -224,8 +227,7 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
       int vtx_fake[max_vtx_size];
       int totem_mpl[2]; // [0] -> posetive side; [1] -> negative side
 
-      // conditional flag to show trigger menu ones
-      bool show_trigger_menu;
+
       ULong64_t CastorL1DecisionWord;
       ULong64_t AlgoJetDecisionWord1;
       ULong64_t AlgoJetDecisionWord2;
@@ -247,7 +249,7 @@ CastorMkL1TestTree::CastorMkL1TestTree(const edm::ParameterSet& iConfig)
 
 {
   //now do what ever initialization is needed
-  GetCollectionsLabel(iConfig);
+  GetParameterSet(iConfig);
 
   edm::Service<TFileService> fs;
 
@@ -278,8 +280,6 @@ CastorMkL1TestTree::CastorMkL1TestTree(const edm::ParameterSet& iConfig)
   myTree->Branch("AlgoJetDecisionWord1" , &AlgoJetDecisionWord1 , "AlgoJetDecisionWord1/l");
   myTree->Branch("AlgoJetDecisionWord2" , &AlgoJetDecisionWord2 , "AlgoJetDecisionWord2/l");
   myTree->Branch("HLTDecisionWord" , &HLTDecisionWord , "HLTDecisionWord/l");
-
-  show_trigger_menu = true;
 }
 
 
@@ -418,8 +418,11 @@ CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
 // ------------ methods to get detector collections --------------------------------------
 void
-CastorMkL1TestTree::GetCollectionsLabel(const edm::ParameterSet& iConfig)
+CastorMkL1TestTree::GetParameterSet(const edm::ParameterSet& iConfig)
 {
+  // get flags
+  show_trigger_menu = iConfig.getParameter<bool>("ShowTriggerMenu");
+
   // define collections
   PileUpInfo_       = iConfig.getParameter<edm::InputTag>("PileUpInfo");
 
