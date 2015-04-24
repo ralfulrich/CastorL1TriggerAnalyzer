@@ -3,7 +3,7 @@ import FWCore.ParameterSet.Config as cms
 castormkl1testtree = cms.EDAnalyzer('CastorMkL1TestTree',
     ShowTriggerMenu  = cms.bool(True),
 
-    PileUpInfo       = cms.InputTag('addPileupInfo','','HLT'),
+    PileUpInfo       = cms.InputTag('addPileupInfo'),
     GenPartColl      = cms.InputTag('genParticles'),
     GenJetColl       = cms.InputTag('ak5GenJets'),
     CaloTowerColl    = cms.InputTag('towerMaker'),
@@ -11,6 +11,6 @@ castormkl1testtree = cms.EDAnalyzer('CastorMkL1TestTree',
     CasRecHitColl    = cms.InputTag('castorreco'),
     BasicJetColl     = cms.InputTag('ak5CastorJets'),
     CastorJetID      = cms.InputTag('ak5CastorJetID'),
-    TrigResults      = cms.InputTag('TriggerResults','','HLT2'),
+    TrigResults      = cms.InputTag('TriggerResults'),
     VertexColl       = cms.InputTag('offlinePrimaryVertices')
 )

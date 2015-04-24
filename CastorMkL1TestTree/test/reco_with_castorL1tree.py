@@ -5,7 +5,7 @@
 # with command line options: FullReco --step DIGI,L1,DIGI2RAW,HLT:50nsGRun,RAW2DIGI,L1Reco,RECO --conditions auto:run2_mc_50ns --pileup NoPileUp --datamix NODATAMIXER --eventcontent RECOSIM --datatier GEN-SIM-RECO --filein=file:SIM.root --fileout=file:FullReco_Test_RECOSIM.root --mc --customise SLHCUpgradeSimulations/Configuration/postLS1Customs.customisePostLS1_50ns --no_exec
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process('HLT2')
+process = cms.Process('HLT')
 
 #################################################################################################################################
 #################################################################################################################################

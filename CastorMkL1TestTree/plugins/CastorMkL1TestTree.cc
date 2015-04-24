@@ -319,7 +319,7 @@ CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   // Get all necessary collections
   if( !GetCollections(iEvent) ) return;
   
-  // num_pu_vtx = GetPileUp(PileUpInfo);
+  num_pu_vtx = GetPileUp(PileUpInfo);
   
   totem_mpl[0] = 0; totem_mpl[1] = 0;
 
@@ -441,14 +441,14 @@ bool
 CastorMkL1TestTree::GetCollections(const edm::Event& iEvent)
 {
 
-  // // ******************************** Pilup Information ************************************
-  // try{ iEvent.getByLabel(PileUpInfo_, PileUpInfo); }
-  // catch(...) { edm::LogWarning(" PileUpInfo ") << " Cannot get PileUpInfo " << std::endl; }
+  // ******************************** Pilup Information ************************************
+  try{ iEvent.getByLabel(PileUpInfo_, PileUpInfo); }
+  catch(...) { edm::LogWarning(" PileUpInfo ") << " Cannot get PileUpInfo " << std::endl; }
   
-  // if( !PileUpInfo.isValid() || PileUpInfo.failedToGet() ) {
-  //   edm::LogWarning(" PileUpInfo ") << " Cannot read PileUpInfo " << std::endl;
-  //   return false;
-  // }
+  if( !PileUpInfo.isValid() || PileUpInfo.failedToGet() ) {
+    edm::LogWarning(" PileUpInfo ") << " Cannot read PileUpInfo " << std::endl;
+    return false;
+  }
 
 
   // ******************************** GEN Particles ************************************ 
@@ -596,7 +596,7 @@ CastorMkL1TestTree::GetL1TTriggerInfo(const edm::Event& iEvent, const edm::Event
 
   bool changedConfig = false;
   // int triggerBits[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
-  if (!hltConfig.init(iEvent.getRun(), iConfig, "HLT2", changedConfig)) {
+  if (!hltConfig.init(iEvent.getRun(), iConfig, "HLT", changedConfig)) {
     std::cerr << "*** (HLT) Initialization of HLTConfigProvider failed!!" << std::endl;
     return;
   }
