@@ -581,7 +581,7 @@ CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventS
   HLT_path_bits.resize( HLT_path_names.size(), std::pair<bool,int>(false,-1) );
 
   bool changedConfig = false;
-  if (!hltConfig.init(iEvent.getRun(), iConfig, "HLT", changedConfig)) {
+  if (!hltConfig.init(iEvent.getRun(), iConfig, TrigResults_.process(), changedConfig)) {
     std::cerr << "*** (HLT) Initialization of HLTConfigProvider failed!!" << std::endl;
     return;
   }

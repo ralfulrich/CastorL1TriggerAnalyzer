@@ -20,7 +20,7 @@ process.load('Configuration.StandardSequences.MagneticField_38T_cff')
 process.load('Configuration.StandardSequences.Digi_cff')
 process.load('Configuration.StandardSequences.SimL1Emulator_cff')
 process.load('Configuration.StandardSequences.DigiToRaw_cff')
-process.load('HLTrigger.Configuration.HLT_50nsGRun_cff')
+process.load('HLTrigger.Configuration.HLT_50nsUser_cff')
 process.load('Configuration.StandardSequences.RawToDigi_cff')
 process.load('Configuration.StandardSequences.L1Reco_cff')
 process.load('Configuration.StandardSequences.Reconstruction_cff')
@@ -93,8 +93,9 @@ import CastorL1TriggerAnalyzer.CastorMkL1TestTree.CastorMkL1TestTree_cfi
 process.castormkl1testtree = CastorL1TriggerAnalyzer.CastorMkL1TestTree.CastorMkL1TestTree_cfi.castormkl1testtree.clone()
 process.castormkl1testtree.ShowDebugInfo   = cms.bool(True)
 process.castormkl1testtree.ShowTriggerMenu = cms.bool(True)
-process.castormkl1testtree.HLTpaths        = cms.vstring('HLT_Random_v1',
-                                                         'HLT_ZeroBias_v1')
+# when self produced HLT overwrite older HLT the new process name is needed
+process.castormkl1testtree.TrigResults     = cms.InputTag('TriggerResults','',process.name_())
+process.castormkl1testtree.HLTpaths        = cms.vstring('HLT_PFJet15_v1','HLT_Mu5_v1')
 #################################################################################################################################
 
 
