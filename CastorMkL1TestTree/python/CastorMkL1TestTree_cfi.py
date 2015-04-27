@@ -13,7 +13,7 @@ castormkl1testtree = cms.EDAnalyzer('CastorMkL1TestTree',
     CasRecHitColl    = cms.InputTag('castorreco'),
     BasicJetColl     = cms.InputTag('ak5CastorJets'),
     CastorJetID      = cms.InputTag('ak5CastorJetID'),
-    TrigResults      = cms.InputTag('TriggerResults'),
+    TrigResults      = cms.InputTag('TriggerResults','','HLT'),
     VertexColl       = cms.InputTag('offlinePrimaryVertices'),
 
     HLTpaths         = cms.vstring()
