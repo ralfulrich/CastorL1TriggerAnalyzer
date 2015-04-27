@@ -189,6 +189,7 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
 
       // --------- flags ---------------------------------
       bool show_debug_info;
+      bool only_check_trigger; // if true overwrite show_trigger_menu=true
       bool show_trigger_menu;
 
       std::bitset<64> L1TTBits;
@@ -297,17 +298,19 @@ CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 {
   using namespace edm;
 
-  // Get all necessary collections
-  if( !GetCollections(iEvent) ) return;
-  
-  num_pu_vtx = 0;
-  num_pu_vtx = GetPileUp(PileUpInfo);
-  
-  CollectGenParticles();
-  CollectGenJets();
-  CollectCasRecHits();
-  CollectCasJets();
-  CollectVertices();
+  if( !only_check_trigger ) {
+    // Get all necessary collections
+    if( !GetCollections(iEvent) ) return;
+    
+    num_pu_vtx = 0;
+    num_pu_vtx = GetPileUp(PileUpInfo);
+    
+    CollectGenParticles();
+    CollectGenJets();
+    CollectCasRecHits();
+    CollectCasJets();
+    CollectVertices();
+  }
 
   CastorL1DecisionWord = 0;
   AlgoJetDecisionWord1 = 0;
@@ -324,23 +327,26 @@ void
 CastorMkL1TestTree::GetParameterSet(const edm::ParameterSet& iConfig)
 {
   // get flags
-  show_debug_info   = iConfig.getParameter<bool>("ShowDebugInfo");
-  show_trigger_menu = iConfig.getParameter<bool>("ShowTriggerMenu");
+  show_debug_info    = iConfig.getParameter<bool>("ShowDebugInfo");
+  only_check_trigger = iConfig.getParameter<bool>("OnlyCheckTrigger");
+  show_trigger_menu  = iConfig.getParameter<bool>("ShowTriggerMenu");
+
+  if( only_check_trigger ) show_trigger_menu = true;
 
   // define collections
-  PileUpInfo_       = iConfig.getParameter<edm::InputTag>("PileUpInfo");
+  PileUpInfo_    = iConfig.getParameter<edm::InputTag>("PileUpInfo");
 
-  GenPartColl_      = iConfig.getParameter<edm::InputTag>("GenPartColl");
-  GenJetColl_       = iConfig.getParameter<edm::InputTag>("GenJetColl");
+  GenPartColl_   = iConfig.getParameter<edm::InputTag>("GenPartColl");
+  GenJetColl_    = iConfig.getParameter<edm::InputTag>("GenJetColl");
 
-  BasicJetColl_     = iConfig.getParameter<edm::InputTag>("BasicJetColl");
-  CastorJetID_      = iConfig.getParameter<edm::InputTag>("CastorJetID");
-  CasRecHitColl_    = iConfig.getParameter<edm::InputTag>("CasRecHitColl");
+  BasicJetColl_  = iConfig.getParameter<edm::InputTag>("BasicJetColl");
+  CastorJetID_   = iConfig.getParameter<edm::InputTag>("CastorJetID");
+  CasRecHitColl_ = iConfig.getParameter<edm::InputTag>("CasRecHitColl");
 
-  TrigResults_      = iConfig.getParameter<edm::InputTag>("TrigResults");
-  VertexColl_       = iConfig.getParameter<edm::InputTag>("VertexColl");
+  TrigResults_   = iConfig.getParameter<edm::InputTag>("TrigResults");
+  VertexColl_    = iConfig.getParameter<edm::InputTag>("VertexColl");
 
-  HLT_path_names    = iConfig.getParameter< std::vector<std::string> >("HLTpaths");
+  HLT_path_names = iConfig.getParameter< std::vector<std::string> >("HLTpaths");
 }
 
 

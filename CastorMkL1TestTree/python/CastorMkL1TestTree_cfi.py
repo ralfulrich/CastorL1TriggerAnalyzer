@@ -2,6 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 castormkl1testtree = cms.EDAnalyzer('CastorMkL1TestTree',
     ShowDebugInfo    = cms.bool(False),
+    OnlyCheckTrigger = cms.bool(False), # if True overwrite ShowTriggerMenu=True
     ShowTriggerMenu  = cms.bool(False),
 
     PileUpInfo       = cms.InputTag('addPileupInfo'),
