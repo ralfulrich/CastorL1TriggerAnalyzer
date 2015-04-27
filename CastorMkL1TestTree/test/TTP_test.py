@@ -37,7 +37,8 @@ process.maxEvents = cms.untracked.PSet(
 # Input source
 process.source = cms.Source("PoolSource",
     secondaryFileNames = cms.untracked.vstring(),
-    fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/c/cwohrman/CastorTriggerL1EmulationTest/ForTestMuonTriggerWithTTPDigi/CMSSW_7_3_2/src/239754_unpacked.root')
+    fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_raw_2015/241423_ls179to266_likelyLHCclock_castimequasifin10ts_1800V_B0T_BeamsInLHC_unpacked.root')
+    # fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/c/cwohrman/CastorTriggerL1EmulationTest/ForTestMuonTriggerWithTTPDigi/CMSSW_7_3_2/src/239754_unpacked.root')
     # fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/Commissioning2015_MinimumBias_RAW_v1_000_239874_00000_22C8434B-1DDD-E411-B698-02163E013810_unpacked.root')
     # fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/Commissioning2015_MinimumBias_RAW_v1_000_239821_00000_D6B7A994-75DC-E411-92A7-02163E01354D_circbeamslumis_unpacked.root')
     # fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/m/makbiyik/public/UPC_event_Hiskim/CMSSW_5_3_20/src/ConvertStarlightToLHE/OneTrigger/1st_STEP_py_GEN_SIM_50_100.root')
@@ -116,8 +117,8 @@ process.MessageLogger = cms.Service("MessageLogger",
 
 # Other statements
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_hlt_GRun', '')
-# process.GlobalTag = GlobalTag(process.GlobalTag, 'GR_P_V49::All', '')
+# process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_hlt_GRun', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'GR_P_V50::All', '')
 print process.GlobalTag.globaltag
 
 process.p = cms.Path(process.castorl1test)

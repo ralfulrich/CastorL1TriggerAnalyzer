@@ -245,6 +245,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // if( debugInfo ) std::cout << "NEW EVENT" << std::endl;
 
   int evtnbr = iEvent.id().event();
+  int evtbx  = iEvent.bunchCrossing();
+
+  UNUSED(evtbx);
 
   double MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[16][3][10];
 
@@ -383,11 +386,17 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       if( debugInfo ) {
         if( trigger.octantsMuon[tpg] ) {
-          std::cout << "Muon Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
+          std::cout << "Muon         Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
         }
+        // if( trigger.octantsA[tpg] ) {
+        //   std::cout << "Total Energy Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
+        // }
         if( trigger.octantsMuon[tpg+1] ) {
-          std::cout << "Muon Triggered on Octant:" << tpg+1 << " with tsshift:" << tsshift << std::endl;
+          std::cout << "Muon         Triggered on Octant:" << tpg+1 << " with tsshift:" << tsshift << std::endl;
         }
+        // if( trigger.octantsA[tpg+1] ) {
+        //   std::cout << "Total Energy Triggered on Octant:" << tpg+1 << " with tsshift:" << tsshift << std::endl;
+        // }
       }
 
       if( (trigger.TTP_Bits[tpg] != TPGa_data_Bits[tpg]) || (trigger.TTP_Bits[tpg+1] != TPGa_data_Bits[tpg+1]) ) {
@@ -418,7 +427,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if( trigger.octantsMuon[ioct] ) noct_muon++;
       if( trigger.octantsA[ioct] ) noct_tot++;
     }
-    if( noct_muon == 1 && noct_tot == 0 ) std::cout << "**(TTP)** In Event:" << evtnbr << " Castor Muon should trigger with tsshift:" << trigger.sample << std::endl;
+    if( noct_muon == 1 && noct_tot == 0 ) 
+      std::cout << "**(TTP)** In Event:" << evtnbr << " Castor Muon should trigger with tsshift:" << trigger.sample << std::endl;
 
     // if(CastorDigiAndTrigDebug) trigger.Print();
     castorTrigger.push_back(trigger);
