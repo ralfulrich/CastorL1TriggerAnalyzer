@@ -31,16 +31,19 @@ process.maxEvents = cms.untracked.PSet(
     input = cms.untracked.int32(-1)
 )
 
+
+#################################################################################################################################
+#################################################################################################################################
 # Input source
 process.source = cms.Source("PoolSource",
     secondaryFileNames = cms.untracked.vstring(),
     fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/c/cwohrman/CastorTriggerL1EmulationTest/ForTestMuonTriggerWithTTPDigi/CMSSW_7_3_2/src/239754_unpacked.root')
     # fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/Commissioning2015_MinimumBias_RAW_v1_000_239874_00000_22C8434B-1DDD-E411-B698-02163E013810_unpacked.root')
     # fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/Commissioning2015_MinimumBias_RAW_v1_000_239821_00000_D6B7A994-75DC-E411-92A7-02163E01354D_circbeamslumis_unpacked.root')
-    #fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/m/makbiyik/public/UPC_event_Hiskim/CMSSW_5_3_20/src/ConvertStarlightToLHE/OneTrigger/1st_STEP_py_GEN_SIM_50_100.root')
-    #fileNames = cms.untracked.vstring('file:/afs/cern.ch/user/c/cwohrman/public/forigor/reco_pion_E1To1000GeV_1.root')
-    #fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/c/cwohrman/CastorTriggerL1EmulationTest/CMSSW_7_2_0_pre6/src/test/pion_E1To1000GeV/pg_pion_E1To1000GeV_9.root')
-    #fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/c/cwohrman/CastorTriggerL1EmulationTest/CMSSW_7_2_0_pre6/src/test/RAW.root')
+    # fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/m/makbiyik/public/UPC_event_Hiskim/CMSSW_5_3_20/src/ConvertStarlightToLHE/OneTrigger/1st_STEP_py_GEN_SIM_50_100.root')
+    # fileNames = cms.untracked.vstring('file:/afs/cern.ch/user/c/cwohrman/public/forigor/reco_pion_E1To1000GeV_1.root')
+    # fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/c/cwohrman/CastorTriggerL1EmulationTest/CMSSW_7_2_0_pre6/src/test/pion_E1To1000GeV/pg_pion_E1To1000GeV_9.root')
+    # fileNames = cms.untracked.vstring('file:/afs/cern.ch/work/c/cwohrman/CastorTriggerL1EmulationTest/CMSSW_7_2_0_pre6/src/test/RAW.root')
 
     # splash beam1,hv900,cms gloabl clock:
         # fileNames = cms.untracked.vstring('/afs/cern.ch/user/k/katkov/afswork/hiforest/Tmp/CMSSW_7_3_0_pre2/src/CalibCalorimetry/CastorCalib/test/239895b1_unpacked.root')
@@ -49,65 +52,15 @@ process.source = cms.Source("PoolSource",
     # circulating beams last night ?, hv1800 ?, cms gloabl clock?:
         # fileNames = cms.untracked.vstring('/afs/cern.ch/user/k/katkov/afswork/hiforest/Tmp/CMSSW_7_3_0_pre2/src/CalibCalorimetry/CastorCalib/test/240070_unpacked.root')
 )
+#################################################################################################################################
 
-# process.options = cms.untracked.PSet(
 
-# )
 
-# Production Info
-# process.configurationMetadata = cms.untracked.PSet(
-#     version = cms.untracked.string('$Revision: 1.19 $'),
-#     annotation = cms.untracked.string('reco nevts:1'),
-#     name = cms.untracked.string('Applications')
-# )
-
-# Output definition
-
-# process.RECOSIMoutput = cms.OutputModule("PoolOutputModule",
-#     splitLevel = cms.untracked.int32(0),
-#     eventAutoFlushCompressedSize = cms.untracked.int32(5242880),
-#     # outputCommands = process.RECOSIMEventContent.outputCommands,
-#     outputCommands = cms.untracked.vstring(
-#         'drop *', 
-#         'keep *_genParticles_*_*',
-#         'keep *_generator_*_*',
-#         'keep *_TriggerResults_*_*',
-#         'keep *_ak5GenJets_*_*',
-#         'keep *_castorreco_*_*',
-#         'keep *_ak7BasicJets_*_*',
-#         'keep *_ak7CastorJetID_*_*',
-#         'keep *_CastorTowerReco_*_*',
-#         'keep *_hltL1GtObjectMap_*_*',
-#         'keep *_l1L1GtObjectMap_*_*',
-#         'keep *_gtDigis_*_*',
-#         'keep *_ecalTPSkim_*_*',
-#         'keep *_hltScalersRawToDigi_*_*',
-#         'keep *_scalersRawToDig_*_*',
-#         'keep *_hltTriggerSummaryAOD_*_*',
-#     ),
-#     fileName = cms.untracked.string('file:reco_MC_MinBias.root'),
-#     dataset = cms.untracked.PSet(
-#         filterName = cms.untracked.string(''),
-#         dataTier = cms.untracked.string('GEN-SIM-RECO')
-#     )
-# )
-
-# Additional output definition
 
 #################################################################################################################################
 #################################################################################################################################
 process.castorl1test = cms.EDAnalyzer('CastorTTPTest',
     debugInfo = cms.bool(True)
-    # PileUpInfo       = cms.InputTag('addPileupInfo','','HLT'),
-    # GenPartColl      = cms.InputTag('genParticles'),
-    # GenJetColl       = cms.InputTag('ak4GenJets'),
-    # CaloTowerColl    = cms.InputTag('towerMaker'),
-    # HadFwdRecHitColl = cms.InputTag('hfreco'),
-    # CasRecHitColl    = cms.InputTag('castorreco'),
-    # BasicJetColl     = cms.InputTag('ak7BasicJets'),
-    # CastorJetID      = cms.InputTag('ak7CastorJetID'),
-    # TrigResults      = cms.InputTag('TriggerResults','','HLT2'),
-    # VertexColl       = cms.InputTag('offlinePrimaryVertices')
 )
 #################################################################################################################################
 
@@ -163,54 +116,9 @@ process.MessageLogger = cms.Service("MessageLogger",
 
 # Other statements
 from Configuration.AlCa.GlobalTag import GlobalTag
-# process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_hlt_GRun', '')
-process.GlobalTag = GlobalTag(process.GlobalTag, 'GR_P_V49::All', '')
+process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:run2_hlt_GRun', '')
+# process.GlobalTag = GlobalTag(process.GlobalTag, 'GR_P_V49::All', '')
 print process.GlobalTag.globaltag
 
-# # Path and EndPath definitions
-# process.digitisation_step = cms.Path(process.pdigi)
-# process.L1simulation_step = cms.Path(process.SimL1Emulator)
-# process.digi2raw_step = cms.Path(process.DigiToRaw)
-# process.raw2digi_step = cms.Path(process.RawToDigi)
-# process.simraw2digi_step = cms.Path(process.RawToDigi)
-# process.L1Reco_step = cms.Path(process.L1Reco)
-# process.reconstruction_step = cms.Path(process.reconstruction)
-# process.endjob_step = cms.EndPath(process.endOfProcess)
-# # process.RECOSIMoutput_step = cms.EndPath(process.RECOSIMoutput)
-# process.MkL1Tree_step = cms.Path(process.castorl1test)
-
 process.p = cms.Path(process.castorl1test)
-
-# # Schedule definition
-# process.schedule = cms.Schedule(process.digitisation_step,process.L1simulation_step,process.digi2raw_step)
-# #process.schedule = cms.Schedule(process.raw2digi_step,process.L1simulation_step) #,process.digi2raw_step)
-# process.schedule.extend(process.HLTSchedule)
-# #process.schedule.extend([process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.MkL1Tree_step])
-# #process.schedule.extend([process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.endjob_step,process.RECOSIMoutput_step])
-# process.schedule.extend([process.raw2digi_step,process.L1Reco_step,process.reconstruction_step,process.endjob_step,process.MkL1Tree_step])
-
-# # customisation of the process.
-
-# # Automatic addition of the customisation function from HLTrigger.Configuration.customizeHLTforMC
-# from HLTrigger.Configuration.customizeHLTforMC import customizeHLTforMC 
-
-# #call to customisation function customizeHLTforMC imported from HLTrigger.Configuration.customizeHLTforMC
-# process = customizeHLTforMC(process)
-
-# # Automatic addition of the customisation function from HLTrigger.Configuration.CustomConfigs
-# from HLTrigger.Configuration.CustomConfigs import L1THLT 
-
-# #call to customisation function L1THLT imported from HLTrigger.Configuration.CustomConfigs
-# process = L1THLT(process)
-
-# # # Automatic addition of the customisation function from SLHCUpgradeSimulations.Configuration.postLS1Customs
-# # from SLHCUpgradeSimulations.Configuration.postLS1Customs import customisePostLS1 
-
-# # #call to customisation function customisePostLS1 imported from SLHCUpgradeSimulations.Configuration.postLS1Customs
-# # process = customisePostLS1(process)
-
-# # from https://twiki.cern.ch/twiki/bin/view/CMSPublic/SWGuideGlobalHLT#Running_the_HLT_with_CMSSW_7_AN1
-# process.hltCsc2DRecHits.wireDigiTag  = cms.InputTag("simMuonCSCDigis","MuonCSCWireDigi")
-# process.hltCsc2DRecHits.stripDigiTag = cms.InputTag("simMuonCSCDigis","MuonCSCStripDigi")
-# # End of customisation functions
 
