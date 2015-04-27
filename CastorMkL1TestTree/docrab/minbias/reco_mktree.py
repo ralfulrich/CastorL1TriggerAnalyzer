@@ -91,8 +91,6 @@ process.configurationMetadata = cms.untracked.PSet(
 #################################################################################################################################
 import CastorL1TriggerAnalyzer.CastorMkL1TestTree.CastorMkL1TestTree_cfi
 process.castormkl1testtree = CastorL1TriggerAnalyzer.CastorMkL1TestTree.CastorMkL1TestTree_cfi.castormkl1testtree.clone()
-process.castormkl1testtree.ShowDebugInfo   = cms.bool(True)
-process.castormkl1testtree.ShowTriggerMenu = cms.bool(True)
 # when self produced HLT overwrite older HLT the new process name is needed
 process.castormkl1testtree.TrigResults     = cms.InputTag('TriggerResults','',process.name_())
 process.castormkl1testtree.HLTpaths        = cms.vstring('HLT_PFJet15_v1','HLT_Mu5_v1')

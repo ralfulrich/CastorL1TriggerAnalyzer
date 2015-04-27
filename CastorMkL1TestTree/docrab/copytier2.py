@@ -6,7 +6,7 @@ import shlex
 
 
 #listcommand = "lcg-ls -c 500 -o 0 srm://dcache-se-cms.desy.de:8443/srm/managerv2'?'SFN=/pnfs/desy.de/cms/tier2/store/user/cwohrman/SimCastorL1StudyMkTree_RecoMkTree_QCD_15_30/"
-listcommand = "lcg-ls -c 500 -o 1000 srm://dcache-se-cms.desy.de:8443/srm/managerv2'?'SFN=/pnfs/desy.de/cms/tier2/store/user/cwohrman/SimCastorL1StudyMkTree_RecoMkTree_MinBias/"
+listcommand = "lcg-ls -c 1 -o 0 srm://dcache-se-cms.desy.de:8443/srm/managerv2'?'SFN=/pnfs/desy.de/cms/tier2/store/user/cwohrman/SimCastorL1StudyMkTree_RecoMkTree_MinBias/"
 
 # for HF stuff
 #listcommand = "lcg-ls -c 500 -o 0 srm://dcache-se-cms.desy.de:8443/srm/managerv2'?'SFN=/pnfs/desy.de/cms/tier2/store/user/cwohrman/SimCastorL1StudyMkTree_RecoMkTree_HF_MinBias/"

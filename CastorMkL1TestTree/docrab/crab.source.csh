@@ -9,3 +9,6 @@
 # for lxplus6
 source /afs/cern.ch/cms/ccs/wm/scripts/Crab/crab.csh
 
+# for crab3
+# source /cvmfs/cms.cern.ch/crab3/crab.csh
+
