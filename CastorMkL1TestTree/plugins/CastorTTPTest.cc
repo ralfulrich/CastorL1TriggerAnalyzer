@@ -192,6 +192,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
       edm::Handle<CastorDigiCollection>         digicoll;
       // --------- tree variables ------------------------
       // TTree* myTree;
+      std::map<std::string,TH1*> h1;
       std::map<std::string,TH2*> h2;
 
       edm::Service<TFileService> fs;
@@ -217,6 +218,12 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
 
   // myTree = fs->make<TTree>("myTree","myTree");
   show_trigger_menu = false;
+
+  h1["hRelBxMuOct"]   = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
+  h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
+
+  h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",1000,0,-1);
+  h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",1000,0,-1);
 }
 
 
@@ -334,6 +341,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     }
 
+    bool fillmuocttrig = true;
+    bool filltoteocttrig = true;
     bool print = false;
     for ( int tpg = 0; tpg < 8 ; tpg+=2 ) {
       trigger.octantsA[tpg]         = ttpInput[0+(8*(tpg/2))];
@@ -353,35 +362,34 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                                       ((trigger.octantsA[tpg+1] ? 0 : 1)<<1) |
                                       (trigger.octantsEM[tpg+1] ? 1 : 0);
 
+      // int ioct = -1;
+      // if( trigger.octantsMuon[tpg] ) {
+      //   ioct = tpg;
+      // }
+      // if( trigger.octantsMuon[tpg+1] ) {
+      //   ioct = tpg+1;
+      // }
 
-      int ioct = -1;
-      if( trigger.octantsMuon[tpg] ) {
-        ioct = tpg;
-      }
-      if( trigger.octantsMuon[tpg+1] ) {
-        ioct = tpg+1;
-      }
-
-      if( ioct != -1 ) {
-        char buf[256];
-        sprintf(buf,"hMuonTrigSums_Evt%d_Oct%d_TSshift%d",evtnbr,ioct,tsshift);
-        std::string hname(buf);
-        h2[hname] = fs->make<TH2D>(hname.c_str(),hname.c_str(),20,0.5,10.5,3,0,3);
+      // if( ioct != -1 ) {
+      //   char buf[256];
+      //   sprintf(buf,"hMuonTrigSums_Evt%d_Oct%d_TSshift%d",evtnbr,ioct,tsshift);
+      //   std::string hname(buf);
+      //   h2[hname] = fs->make<TH2D>(hname.c_str(),hname.c_str(),20,0.5,10.5,3,0,3);
 
 
-        for(int isec=2*ioct; isec<2*ioct+2; isec++) {
-          for(int ipos=0; ipos<3; ipos++) {
-            for(int iTS=0; iTS<10; iTS++) {
-              int irelsec = isec%2;
-              double xval = (iTS+1.-0.25) + irelsec/2.;
-              double yval = ipos+0.5;
-              double zval = MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[isec][ipos][iTS];
-              h2[hname]->Fill(xval,yval,zval);
-            }
-          }
-        }
+      //   for(int isec=2*ioct; isec<2*ioct+2; isec++) {
+      //     for(int ipos=0; ipos<3; ipos++) {
+      //       for(int iTS=0; iTS<10; iTS++) {
+      //         int irelsec = isec%2;
+      //         double xval = (iTS+1.-0.25) + irelsec/2.;
+      //         double yval = ipos+0.5;
+      //         double zval = MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[isec][ipos][iTS];
+      //         h2[hname]->Fill(xval,yval,zval);
+      //       }
+      //     }
+      //   }
 
-      }
+      // }
 
 
       if( debugInfo ) {
@@ -401,6 +409,17 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       if( (trigger.TTP_Bits[tpg] != TPGa_data_Bits[tpg]) || (trigger.TTP_Bits[tpg+1] != TPGa_data_Bits[tpg+1]) ) {
         print = true;
+      }
+
+      if( fillmuocttrig && (trigger.octantsMuon[tpg] || trigger.octantsMuon[tpg+1]) ) {
+        h1["hRelBxMuOct"]->Fill(tsshift);
+        h1["hBxMuOct"]->Fill(evtbx+tsshift);
+        fillmuocttrig = false;
+      }
+      if( filltoteocttrig && (trigger.octantsA[tpg] || trigger.octantsA[tpg+1]) ) {
+        h1["hRelBxTotEOct"]->Fill(tsshift);
+        h1["hBxTotEOct"]->Fill(evtbx+tsshift);
+        filltoteocttrig = false;
       }
     } // end for tpg
 
