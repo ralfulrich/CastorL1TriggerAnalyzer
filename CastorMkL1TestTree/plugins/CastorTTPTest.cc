@@ -200,7 +200,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
       //virtual void endLuminosityBlock(edm::LuminosityBlock const&, edm::EventSetup const&) override;
 
       // --------- user functions ------------------------
-      void GetCollectionsLabel(const edm::ParameterSet& iConfig);
+      void GetParameterSet(const edm::ParameterSet& iConfig);
       bool GetCollections(const edm::Event& iEvent);
 
       void SetMuonTriggerSum(const edm::EventSetup&);
@@ -248,10 +248,9 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
 
 {
   //now do what ever initialization is needed
-  GetCollectionsLabel(iConfig);
+  GetParameterSet(iConfig);
 
   // myTree = fs->make<TTree>("myTree","myTree");
-  show_trigger_menu = true;
 
   h1["hRelBxMuOct"]   = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
   h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
@@ -384,10 +383,11 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 // ------------ methods to get detector collections --------------------------------------
 void
-CastorTTPTest::GetCollectionsLabel(const edm::ParameterSet& iConfig)
+CastorTTPTest::GetParameterSet(const edm::ParameterSet& iConfig)
 {
   // define collections
-  debugInfo = iConfig.getParameter<bool>("debugInfo"); 
+  debugInfo = iConfig.getParameter<bool>("debugInfo");
+  show_trigger_menu = iConfig.getParameter<bool>("ShowTriggerMenu");
 }
 
 bool 
