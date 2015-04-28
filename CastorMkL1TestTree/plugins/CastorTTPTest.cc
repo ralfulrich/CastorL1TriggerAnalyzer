@@ -203,6 +203,28 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
       edm::Service<TFileService> fs;
 
+      //-- trigger stuff
+      struct MyCastorTrig {
+        short int sample;               /**< Time sample; 0 corresponds to the triggering sample */ 
+        //  std::vector<bool> ttpInput;     /**< ttp Inputs; more infor from Alan Camplell */ 
+        bool octantsA[8];               /**< octant-wise trigger info for threshold A */ 
+        bool octantsEM[8];              /**< octant-wise EM trigger  */ 
+        bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
+        bool octantsMuon[8];            /**< octant-wise muon trigger */
+        unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
+
+        void clear() {
+          sample = 0;
+          for(int i=0; i<8; i++) {
+            octantsA[i]       = false;
+            octantsEM[i]      = false;
+            octantsHADveto[i] = false;
+            octantsMuon[i]    = false;
+            TTP_Bits[i]       = 0;
+          }
+        }
+      };
+
 };
 
 //
@@ -265,24 +287,16 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   SetMuonTriggerSum(iSetup);
 
-  //-- trigger stuff
-  struct MyCastorTrig {
-    short int sample;               /**< Time sample; 0 corresponds to the triggering sample */ 
-    //  std::vector<bool> ttpInput;     /**< ttp Inputs; more infor from Alan Camplell */ 
-    bool octantsA[8];               /**< octant-wise trigger info for threshold A */ 
-    bool octantsEM[8];              /**< octant-wise EM trigger  */ 
-    bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
-    bool octantsMuon[8];            /**< octant-wise muon trigger */
-    unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
-  } trigger;
-
   std::vector< MyCastorTrig > castorTrigger; castorTrigger.clear();
+  MyCastorTrig trigger;
 
   int ttp_offset    = 0; // ts of ttp data used wrt SOI
   int ts_tpg_offset = 0; // ts of tpg used wrt SOI
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
 
   for(int tsshift = -2; tsshift < 6; tsshift++){ 
+    trigger.clear();
+    
     trigger.sample   = tsshift;
 
     std::vector<bool> ttpInput = t.inputPattern(ttp_offset+tsshift); // at ts = ttp_offset from nominal zero offset
