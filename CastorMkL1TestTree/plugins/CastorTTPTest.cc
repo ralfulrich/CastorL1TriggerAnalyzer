@@ -205,6 +205,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
       void SetMuonTriggerSum(const edm::EventSetup&);
       CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&);
+      void SetTPGaBits(unsigned int*, const int&, const int&);
 
       // ----------member data ---------------------------
       bool debugInfo;
@@ -301,20 +302,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     unsigned int TPGa_data_Bits[8];
     if( tsshift >= -2 && tsshift <= 1 ) {
-      for(CastorTrigPrimDigiCollection::const_iterator j=castortpg->begin(); j!=castortpg->end(); j++) {
-        const CastorTriggerPrimitiveDigi ctp = (const CastorTriggerPrimitiveDigi)(*j);
-
-        int i = ctp.presamples()+ts_tpg_offset+tsshift;
-        int isec = ctp.id().sector();
-
-        // std::cout << "CastorTriggerPrimitiveDigi bits ch " << ctp.tpchannel(i) << std::endl;
-        
-        if( ctp.tpchannel(i) == 4 ) {
-          TPGa_data_Bits[isec/2]   = ctp.tpdata(i);
-        }
-
-        // if( debugInfo ) std::cout << "CastorTriggerPrimitiveDigi.id().sector():" << isec << std::endl;
-      }
+      SetTPGaBits(TPGa_data_Bits,tsshift,ts_tpg_offset);
     }
 
     bool fillmuocttrig = true;
@@ -561,6 +549,25 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
   }
 
   return trigger;
+}
+
+void 
+CastorTTPTest::SetTPGaBits(unsigned int* TPGa_data_Bits, const int& tsshift, const int& ts_tpg_offset)
+{
+  for(CastorTrigPrimDigiCollection::const_iterator j=castortpg->begin(); j!=castortpg->end(); j++) {
+    const CastorTriggerPrimitiveDigi ctp = (const CastorTriggerPrimitiveDigi)(*j);
+
+    int i = ctp.presamples()+ts_tpg_offset+tsshift;
+    int isec = ctp.id().sector();
+
+    // std::cout << "CastorTriggerPrimitiveDigi bits ch " << ctp.tpchannel(i) << std::endl;
+        
+    if( ctp.tpchannel(i) == 4 ) {
+      TPGa_data_Bits[isec/2]   = ctp.tpdata(i);
+    }
+
+    // if( debugInfo ) std::cout << "CastorTriggerPrimitiveDigi.id().sector():" << isec << std::endl;
+  }
 }
 
 // ------------ method called once each job just before starting event loop  ------------
