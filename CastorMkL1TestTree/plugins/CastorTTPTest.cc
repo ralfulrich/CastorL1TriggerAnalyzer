@@ -161,6 +161,29 @@
 
 class CastorTTPTest : public edm::EDAnalyzer {
    public:
+      //-- trigger helper struct
+      struct MyCastorTrig {
+        short int sample;               /**< Time sample; 0 corresponds to the triggering sample */ 
+        //  std::vector<bool> ttpInput;     /**< ttp Inputs; more infor from Alan Camplell */ 
+        bool octantsA[8];               /**< octant-wise trigger info for threshold A */ 
+        bool octantsEM[8];              /**< octant-wise EM trigger  */ 
+        bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
+        bool octantsMuon[8];            /**< octant-wise muon trigger */
+        unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
+
+        void clear() {
+          sample = 0;
+          for(int i=0; i<8; i++) {
+            octantsA[i]       = false;
+            octantsEM[i]      = false;
+            octantsHADveto[i] = false;
+            octantsMuon[i]    = false;
+            TTP_Bits[i]       = 0;
+          }
+        }
+      };
+
+
       explicit CastorTTPTest(const edm::ParameterSet&);
       ~CastorTTPTest();
 
@@ -181,6 +204,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
       bool GetCollections(const edm::Event& iEvent);
 
       void SetMuonTriggerSum(const edm::EventSetup&);
+      CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&);
 
       // ----------member data ---------------------------
       bool debugInfo;
@@ -202,28 +226,6 @@ class CastorTTPTest : public edm::EDAnalyzer {
       std::map<std::string,TH2*> h2;
 
       edm::Service<TFileService> fs;
-
-      //-- trigger stuff
-      struct MyCastorTrig {
-        short int sample;               /**< Time sample; 0 corresponds to the triggering sample */ 
-        //  std::vector<bool> ttpInput;     /**< ttp Inputs; more infor from Alan Camplell */ 
-        bool octantsA[8];               /**< octant-wise trigger info for threshold A */ 
-        bool octantsEM[8];              /**< octant-wise EM trigger  */ 
-        bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
-        bool octantsMuon[8];            /**< octant-wise muon trigger */
-        unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
-
-        void clear() {
-          sample = 0;
-          for(int i=0; i<8; i++) {
-            octantsA[i]       = false;
-            octantsEM[i]      = false;
-            octantsHADveto[i] = false;
-            octantsMuon[i]    = false;
-            TTP_Bits[i]       = 0;
-          }
-        }
-      };
 
 };
 
@@ -287,21 +289,15 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   SetMuonTriggerSum(iSetup);
 
-  std::vector< MyCastorTrig > castorTrigger; castorTrigger.clear();
-  MyCastorTrig trigger;
+  std::vector< CastorTTPTest::MyCastorTrig > castorTrigger; castorTrigger.clear();
+  
 
   int ttp_offset    = 0; // ts of ttp data used wrt SOI
   int ts_tpg_offset = 0; // ts of tpg used wrt SOI
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
 
-  for(int tsshift = -2; tsshift < 6; tsshift++){ 
-    trigger.clear();
-    
-    trigger.sample   = tsshift;
-
-    std::vector<bool> ttpInput = t.inputPattern(ttp_offset+tsshift); // at ts = ttp_offset from nominal zero offset
-    // sequence is Atop,Abot,Bbot,Btop,raptop,rapbot,muonbot,muontop                                    
-    // htr 3t 3b 4t 4b 5t 5b 7t 7b map to tpg 0..7  
+  for(int tsshift = -2; tsshift < 6; tsshift++){
+    CastorTTPTest::MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset);
 
     unsigned int TPGa_data_Bits[8];
     if( tsshift >= -2 && tsshift <= 1 ) {
@@ -325,23 +321,6 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool filltoteocttrig = true;
     bool print = false;
     for ( int tpg = 0; tpg < 8 ; tpg+=2 ) {
-      trigger.octantsA[tpg]         = ttpInput[0+(8*(tpg/2))];
-      trigger.octantsA[tpg+1]       = ttpInput[1+(8*(tpg/2))];
-      trigger.octantsEM[tpg]        = ttpInput[3+(8*(tpg/2))];
-      trigger.octantsEM[tpg+1]      = ttpInput[2+(8*(tpg/2))];
-      trigger.octantsHADveto[tpg]   = ttpInput[4+(8*(tpg/2))];
-      trigger.octantsHADveto[tpg+1] = ttpInput[5+(8*(tpg/2))];
-      trigger.octantsMuon[tpg]      = ttpInput[7+(8*(tpg/2))];
-      trigger.octantsMuon[tpg+1]    = ttpInput[6+(8*(tpg/2))];
-      trigger.TTP_Bits[tpg]         = ((trigger.octantsMuon[tpg] ? 1 : 0)<<3) |
-                                      ((trigger.octantsHADveto[tpg] ? 0 : 1)<<2) |
-                                      ((trigger.octantsA[tpg] ? 0 : 1)<<1) |
-                                      (trigger.octantsEM[tpg] ? 1 : 0);
-      trigger.TTP_Bits[tpg+1]       = ((trigger.octantsMuon[tpg+1] ? 1 : 0)<<3) |
-                                      ((trigger.octantsHADveto[tpg+1] ? 0 : 1)<<2) |
-                                      ((trigger.octantsA[tpg+1] ? 0 : 1)<<1) |
-                                      (trigger.octantsEM[tpg+1] ? 1 : 0);
-
       // int ioct = -1;
       // if( trigger.octantsMuon[tpg] ) {
       //   ioct = tpg;
@@ -550,6 +529,39 @@ CastorTTPTest::SetMuonTriggerSum(const edm::EventSetup& iSetup)
   }
 }
 
+CastorTTPTest::MyCastorTrig 
+CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const int& ttp_offset)
+{
+  CastorTTPTest::MyCastorTrig trigger;
+  trigger.clear();
+
+  std::vector<bool> ttpInput = t.inputPattern(ttp_offset+tsshift); // at ts = ttp_offset from nominal zero ttp_offset
+  // sequence is Atop,Abot,Bbot,Btop,raptop,rapbot,muonbot,muontop                                    
+  // htr 3t 3b 4t 4b 5t 5b 7t 7b map to tpg 0..7  
+
+  trigger.sample   = tsshift;
+
+  for ( int tpg = 0; tpg < 8 ; tpg+=2 ) {
+    trigger.octantsA[tpg]         = ttpInput[0+(8*(tpg/2))];
+    trigger.octantsA[tpg+1]       = ttpInput[1+(8*(tpg/2))];
+    trigger.octantsEM[tpg]        = ttpInput[3+(8*(tpg/2))];
+    trigger.octantsEM[tpg+1]      = ttpInput[2+(8*(tpg/2))];
+    trigger.octantsHADveto[tpg]   = ttpInput[4+(8*(tpg/2))];
+    trigger.octantsHADveto[tpg+1] = ttpInput[5+(8*(tpg/2))];
+    trigger.octantsMuon[tpg]      = ttpInput[7+(8*(tpg/2))];
+    trigger.octantsMuon[tpg+1]    = ttpInput[6+(8*(tpg/2))];
+    trigger.TTP_Bits[tpg]         = ((trigger.octantsMuon[tpg] ? 1 : 0)<<3) |
+                                    ((trigger.octantsHADveto[tpg] ? 0 : 1)<<2) |
+                                    ((trigger.octantsA[tpg] ? 0 : 1)<<1) |
+                                    (trigger.octantsEM[tpg] ? 1 : 0);
+    trigger.TTP_Bits[tpg+1]       = ((trigger.octantsMuon[tpg+1] ? 1 : 0)<<3) |
+                                    ((trigger.octantsHADveto[tpg+1] ? 0 : 1)<<2) |
+                                    ((trigger.octantsA[tpg+1] ? 0 : 1)<<1) |
+                                    (trigger.octantsEM[tpg+1] ? 1 : 0);
+  }
+
+  return trigger;
+}
 
 // ------------ method called once each job just before starting event loop  ------------
 void 
