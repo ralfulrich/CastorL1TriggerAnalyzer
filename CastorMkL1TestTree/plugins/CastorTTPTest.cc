@@ -207,10 +207,13 @@ class CastorTTPTest : public edm::EDAnalyzer {
       CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&);
       void SetTPGaBits(unsigned int*, const int&, const int&);
 
+      void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
+
       // ----------member data ---------------------------
       bool debugInfo;
       L1GtUtils m_l1GtUtils;
       bool show_trigger_menu;
+      std::map<int,std::string> L1TT_Menu;
 
       double MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[16][3][10];
 
@@ -248,7 +251,7 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   GetCollectionsLabel(iConfig);
 
   // myTree = fs->make<TTree>("myTree","myTree");
-  show_trigger_menu = false;
+  show_trigger_menu = true;
 
   h1["hRelBxMuOct"]   = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
   h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
@@ -309,36 +312,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool filltoteocttrig = true;
     bool print = false;
     for ( int tpg = 0; tpg < 8 ; tpg+=2 ) {
-      // int ioct = -1;
-      // if( trigger.octantsMuon[tpg] ) {
-      //   ioct = tpg;
-      // }
-      // if( trigger.octantsMuon[tpg+1] ) {
-      //   ioct = tpg+1;
-      // }
-
-      // if( ioct != -1 ) {
-      //   char buf[256];
-      //   sprintf(buf,"hMuonTrigSums_Evt%d_Oct%d_TSshift%d",evtnbr,ioct,tsshift);
-      //   std::string hname(buf);
-      //   h2[hname] = fs->make<TH2D>(hname.c_str(),hname.c_str(),20,0.5,10.5,3,0,3);
-
-
-      //   for(int isec=2*ioct; isec<2*ioct+2; isec++) {
-      //     for(int ipos=0; ipos<3; ipos++) {
-      //       for(int iTS=0; iTS<10; iTS++) {
-      //         int irelsec = isec%2;
-      //         double xval = (iTS+1.-0.25) + irelsec/2.;
-      //         double yval = ipos+0.5;
-      //         double zval = MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[isec][ipos][iTS];
-      //         h2[hname]->Fill(xval,yval,zval);
-      //       }
-      //     }
-      //   }
-
-      // }
-
-
+    
       if( debugInfo ) {
         if( trigger.octantsMuon[tpg] ) {
           std::cout << "Muon         Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
@@ -402,50 +376,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   } // loop over tsshift
 
 
+  GetL1TTResults(iEvent,iSetup);
 
-
-  bool useL1EventSetup = true;
-  bool useL1GtTriggerMenuLite = true;
-
-  m_l1GtUtils.getL1GtRunCache(iEvent, iSetup, useL1EventSetup, useL1GtTriggerMenuLite);
-
-  int iErrorCode = -1;
-  int l1ConfCode = -1;
-  const bool l1Conf = m_l1GtUtils.availableL1Configuration(iErrorCode, l1ConfCode);
-  if( !l1Conf ) { std::cerr << " (*W*) No valid L1 trigger configuration; code: " << l1Conf << std::endl; }
-
-  const L1GtTriggerMenu* m_l1GtMenu          = m_l1GtUtils.ptrL1TriggerMenuEventSetup(iErrorCode);
-  const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
-  const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
-
-  UNUSED(algorithmMap);
-
-
-  std::map<int,std::string> L1TT_Menu;
-  for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
-    std::string algName      = itAlgo->first;
-    int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
-    // bool algResultBeforeMask = m_l1GtUtils.decisionBeforeMask(iEvent, itAlgo->first, iErrorCode);
-    // bool algResultAfterMask  = m_l1GtUtils.decisionAfterMask (iEvent, itAlgo->first, iErrorCode);
-    // int  triggerMask         = m_l1GtUtils.triggerMask       (iEvent, itAlgo->first, iErrorCode);
-    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
-    // int  preScale            = m_l1GtUtils.prescaleFactor    (iEvent, itAlgo->first, iErrorCode);
-
-
-    if( show_trigger_menu ) {
-      L1TT_Menu[algoBitNumber] = algName;
-    }
-    if( decision && (algoBitNumber>=60 && algoBitNumber<=63) ) 
-      std::cout << "*** In Event " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
-  }
-
-  if( show_trigger_menu ) {
-    std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
-    for(std::map<int,std::string>::iterator it = L1TT_Menu.begin(); it != L1TT_Menu.end(); it++)
-      std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
-
-    show_trigger_menu = false;
-  }
+  
 
 }
 
@@ -567,6 +500,54 @@ CastorTTPTest::SetTPGaBits(unsigned int* TPGa_data_Bits, const int& tsshift, con
     }
 
     // if( debugInfo ) std::cout << "CastorTriggerPrimitiveDigi.id().sector():" << isec << std::endl;
+  }
+}
+
+void 
+CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+{
+  int evtnbr = iEvent.id().event();
+
+  bool useL1EventSetup = true;
+  bool useL1GtTriggerMenuLite = true;
+
+  m_l1GtUtils.getL1GtRunCache(iEvent, iSetup, useL1EventSetup, useL1GtTriggerMenuLite);
+
+  int iErrorCode = -1;
+  int l1ConfCode = -1;
+  const bool l1Conf = m_l1GtUtils.availableL1Configuration(iErrorCode, l1ConfCode);
+  if( !l1Conf ) { std::cerr << " (*W*) No valid L1 trigger configuration; code: " << l1Conf << std::endl; }
+
+  const L1GtTriggerMenu* m_l1GtMenu          = m_l1GtUtils.ptrL1TriggerMenuEventSetup(iErrorCode);
+  const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
+  const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
+
+  UNUSED(algorithmMap);
+
+
+  for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
+    std::string algName      = itAlgo->first;
+    int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
+    // bool algResultBeforeMask = m_l1GtUtils.decisionBeforeMask(iEvent, itAlgo->first, iErrorCode);
+    // bool algResultAfterMask  = m_l1GtUtils.decisionAfterMask (iEvent, itAlgo->first, iErrorCode);
+    // int  triggerMask         = m_l1GtUtils.triggerMask       (iEvent, itAlgo->first, iErrorCode);
+    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
+    // int  preScale            = m_l1GtUtils.prescaleFactor    (iEvent, itAlgo->first, iErrorCode);
+
+
+    if( show_trigger_menu ) {
+      L1TT_Menu[algoBitNumber] = algName;
+    }
+    if( decision && (algoBitNumber>=60 && algoBitNumber<=63) ) 
+      std::cout << "*** In Event " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
+  }
+
+  if( show_trigger_menu ) {
+    std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
+    for(std::map<int,std::string>::iterator it = L1TT_Menu.begin(); it != L1TT_Menu.end(); it++)
+      std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
+
+    show_trigger_menu = false;
   }
 }
 
