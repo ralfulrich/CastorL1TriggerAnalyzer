@@ -180,16 +180,22 @@ class CastorTTPTest : public edm::EDAnalyzer {
       void GetCollectionsLabel(const edm::ParameterSet& iConfig);
       bool GetCollections(const edm::Event& iEvent);
 
+      void SetMuonTriggerSum(const edm::EventSetup&);
+
       // ----------member data ---------------------------
       bool debugInfo;
       L1GtUtils m_l1GtUtils;
       bool show_trigger_menu;
+
+      double MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[16][3][10];
+
       // --------- input labels for collections ----------
 
       // --------- collection handel ---------------------
       edm::Handle<CastorTrigPrimDigiCollection> castortpg;
       edm::Handle<HcalTTPDigiCollection>        castorttp;
       edm::Handle<CastorDigiCollection>         digicoll;
+
       // --------- tree variables ------------------------
       // TTree* myTree;
       std::map<std::string,TH1*> h1;
@@ -224,6 +230,7 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
 
   h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",1000,0,-1);
   h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",1000,0,-1);
+  h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",1000,0,-1);
 }
 
 
@@ -254,50 +261,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int evtnbr = iEvent.id().event();
   int evtbx  = iEvent.bunchCrossing();
 
-  UNUSED(evtbx);
+  h1["hBxAllEvt"]->Fill(evtbx);
 
-  double MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[16][3][10];
-
-  for( int isec = 0; isec < 16; isec++ ) {
-    for( int ipos = 0; ipos < 3; ipos++ ) {
-      for( int iTS = 0; iTS < 10; iTS++ ) {
-        MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[isec][ipos][iTS] = 0;
-      }
-    }
-  }
-
-  // QIE coder to convert to fC
-  // get conditions
-  edm::ESHandle<CastorDbService> conditions;
-  iSetup.get<CastorDbRecord>().get(conditions);
-  const CastorQIEShape* shape = conditions->getCastorShape ();
-  
-  //-- loop over the digi collection (224 digis)
-  for(size_t i = 0; i < digicoll->size(); i++) { 
-  
-    CastorDataFrame digi = (*digicoll)[i];
-    HcalCastorDetId castorid = digi.id();
-    
-    const CastorQIECoder* channelCoder = conditions->getCastorCoder (castorid);
-    CastorCoderDb coder (*channelCoder, *shape);
-    CaloSamples tool;
-    coder.adc2fC(digi,tool);
-
-    // castorDigis[i].mod = castorid.module();
-    // castorDigis[i].sec = castorid.sector();
-    // castorDigis[i].cha = 16*(castorid.module()-1) + castorid.sector();
-    
-    int isec = castorid.sector()-1;
-    int imod = castorid.module()-1;
-    int ipos = imod > 11 ? -1 : ( imod > 7 ? 2 : ( imod > 3 ? 1 : 0 ) );
-
-    //-- loop over the 6 or 10 time slices for each digi
-    for (int ts = 0; ts < digi.size(); ts++) {   
-      // castorDigis[i].adc.push_back(digi[ts].adc());
-      // castorDigis[i].fC.push_back(tool[ts]);
-      if( ipos != -1 ) MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[isec][ipos][ts] += tool[ts];
-    }
-  }
+  SetMuonTriggerSum(iSetup);
 
   //-- trigger stuff
   struct MyCastorTrig {
@@ -523,6 +489,52 @@ CastorTTPTest::GetCollections(const edm::Event& iEvent)
   return true;
 }
 
+void 
+CastorTTPTest::SetMuonTriggerSum(const edm::EventSetup& iSetup)
+{
+  // first clean array
+  for( int isec = 0; isec < 16; isec++ ) {
+    for( int ipos = 0; ipos < 3; ipos++ ) {
+      for( int iTS = 0; iTS < 10; iTS++ ) {
+        MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[isec][ipos][iTS] = 0;
+      }
+    }
+  }
+
+
+  // QIE coder to convert to fC
+  // get conditions
+  edm::ESHandle<CastorDbService> conditions;
+  iSetup.get<CastorDbRecord>().get(conditions);
+  const CastorQIEShape* shape = conditions->getCastorShape ();
+  
+  //-- loop over the digi collection (224 digis)
+  for(size_t i = 0; i < digicoll->size(); i++) { 
+  
+    CastorDataFrame digi = (*digicoll)[i];
+    HcalCastorDetId castorid = digi.id();
+    
+    const CastorQIECoder* channelCoder = conditions->getCastorCoder (castorid);
+    CastorCoderDb coder (*channelCoder, *shape);
+    CaloSamples tool;
+    coder.adc2fC(digi,tool);
+
+    // castorDigis[i].mod = castorid.module();
+    // castorDigis[i].sec = castorid.sector();
+    // castorDigis[i].cha = 16*(castorid.module()-1) + castorid.sector();
+    
+    int isec = castorid.sector()-1;
+    int imod = castorid.module()-1;
+    int ipos = imod > 11 ? -1 : ( imod > 7 ? 2 : ( imod > 3 ? 1 : 0 ) );
+
+    //-- loop over the 6 or 10 time slices for each digi
+    for (int ts = 0; ts < digi.size(); ts++) {   
+      // castorDigis[i].adc.push_back(digi[ts].adc());
+      // castorDigis[i].fC.push_back(tool[ts]);
+      if( ipos != -1 ) MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[isec][ipos][ts] += tool[ts];
+    }
+  }
+}
 
 
 // ------------ method called once each job just before starting event loop  ------------
