@@ -48,70 +48,6 @@
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
-// // include tracks
-// #include "DataFormats/TrackReco/interface/Track.h"
-// #include "DataFormats/TrackReco/interface/TrackFwd.h"
-
-// // include vertices
-// #include "DataFormats/VertexReco/interface/Vertex.h"
-// #include "DataFormats/VertexReco/interface/VertexFwd.h"
-
-// // include electrons
-// #include "DataFormats/EgammaCandidates/interface/GsfElectron.h"
-// #include "DataFormats/EgammaCandidates/interface/GsfElectronFwd.h"
-
-// // include HF electrons
-// #include "DataFormats/RecoCandidate/interface/RecoEcalCandidate.h"
-// #include "DataFormats/RecoCandidate/interface/RecoEcalCandidateFwd.h"
-
-// // HCAL & ECAL RecHit
-// #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
-// #include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
-
-// // HCAL Towers
-// #include "DataFormats/CaloTowers/interface/CaloTowerCollection.h"
-
-// // include castorrechits
-// #include "DataFormats/HcalRecHit/interface/CastorRecHit.h"
-// #include "DataFormats/HcalRecHit/interface/HcalRecHitCollections.h"
-
-// // include castortowers
-// #include "DataFormats/CastorReco/interface/CastorTower.h"
-
-// // include castorjets
-// #include "DataFormats/JetReco/interface/BasicJet.h"
-// #include "DataFormats/JetReco/interface/CastorJetID.h"
-// #include "DataFormats/Common/interface/ValueMap.h"
-
-// // include ZDC digis
-#include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
-// #include "DataFormats/HcalRecHit/interface/ZDCRecHit.h"
-
-// // include digi converter
-// #include "CalibFormats/HcalObjects/interface/HcalCoderDb.h"
-// #include "CalibFormats/HcalObjects/interface/HcalDbService.h"
-// #include "CalibFormats/HcalObjects/interface/HcalDbRecord.h"
-
-// // include MET
-// #include "DataFormats/METReco/interface/PFMET.h"
-// #include "DataFormats/METReco/interface/PFMETFwd.h"
-
-// // include GenParticles
-// #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
-// #include "DataFormats/JetReco/interface/GenJet.h"
-// #include "DataFormats/JetReco/interface/GenJetCollection.h"
-
-// // include SimVertices
-// #include "SimDataFormats/Vertex/interface/SimVertex.h"
-// #include "SimDataFormats/Vertex/interface/SimVertexContainer.h"
-
-// // geometry
-// #include "Geometry/CaloTopology/interface/HcalTopology.h"
-// #include "Geometry/CaloGeometry/interface/CaloGeometry.h"
-// #include "Geometry/CaloGeometry/interface/CaloCellGeometry.h"
-// #include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
-// #include "Geometry/Records/interface/CaloGeometryRecord.h"
-
 // // HLT Trigger
 #include "DataFormats/Common/interface/TriggerResults.h"
 #include "HLTrigger/HLTcore/interface/HLTConfigProvider.h"
@@ -123,9 +59,6 @@
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerObjectMapRecord.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerObjectMap.h"
 // //#include "L1Trigger/GlobalTrigger/interface/L1GlobalTrigger.h"
-
-// // Pileup Information
-// #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
 #include "CondFormats/L1TObjects/interface/L1GtTriggerMenu.h"
 #include "CondFormats/DataRecord/interface/L1GtTriggerMenuRcd.h"
@@ -139,19 +72,11 @@
 
 
 // Castor Digi Info
-// #include "DataFormats/HcalDigi/interface/CastorDataFrame.h"
-// #include "DataFormats/HcalDetId/interface/HcalCastorDetId.h"
-
-// #include "CondFormats/CastorObjects/interface/CastorQIEShape.h"
-// #include "CondFormats/CastorObjects/interface/CastorQIECoder.h"
 #include "CalibFormats/CastorObjects/interface/CastorCoderDb.h"
 #include "CalibFormats/CastorObjects/interface/CastorDbService.h"
 #include "CalibFormats/CastorObjects/interface/CastorDbRecord.h"
 #include "CalibFormats/CastorObjects/interface/CastorCoder.h"
-// #include "CalibFormats/CastorObjects/interface/CastorChannelCoder.h"
 
-// // include cmssw-lorentzvector (is pointing over typedef's to root TLorentzVector)
-// #include "DataFormats/Candidate/interface/LeafCandidate.h"
 
 #define UNUSED(x) ((void)(x))
 
@@ -362,7 +287,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if( trigger.octantsA[tpg+1] ) h1["hOctATrig"]->Fill(tpg+1);
     } // end for tpg
 
-
+    // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
       if(print) trigger.print();
     }
