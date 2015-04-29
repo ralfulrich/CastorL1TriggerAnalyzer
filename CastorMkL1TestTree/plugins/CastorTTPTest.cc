@@ -112,14 +112,15 @@ class CastorTTPTest : public edm::EDAnalyzer {
         }
 
         void print() {
-          std::cout << "sample# " << sample << "\n";
+          std::cout << "sample# " << sample << std::endl;
+          std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa" << std::endl;
           for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
             std::cout << tpg << "   " 
                       << octantsMuon[tpg]    << "  " 
                       << octantsHADveto[tpg] << "  "  // Hadron veto
                       << octantsA[tpg]       << "  "     // summ
                       << octantsEM[tpg]      << "  "     // EM
-                      <<  "\t" 
+                      << "\t" 
                       << TTP_Bits[tpg]       << "  " 
                       << TPGa_data_Bits[tpg] << std::endl;
           }
@@ -258,12 +259,14 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if( debugInfo ) {
         if( trigger.octantsMuon[tpg] ) {
           std::cout << "Muon         Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
+          trigger.print();
         }
         // if( trigger.octantsA[tpg] ) {
         //   std::cout << "Total Energy Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
         // }
         if( trigger.octantsMuon[tpg+1] ) {
           std::cout << "Muon         Triggered on Octant:" << tpg+1 << " with tsshift:" << tsshift << std::endl;
+          trigger.print();
         }
         // if( trigger.octantsA[tpg+1] ) {
         //   std::cout << "Total Energy Triggered on Octant:" << tpg+1 << " with tsshift:" << tsshift << std::endl;
