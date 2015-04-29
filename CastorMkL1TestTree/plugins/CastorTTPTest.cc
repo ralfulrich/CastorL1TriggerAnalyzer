@@ -406,14 +406,8 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
     trigger.octantsHADveto[tpg+1] = ttpInput[5+(8*(tpg/2))];
     trigger.octantsMuon[tpg]      = ttpInput[7+(8*(tpg/2))];
     trigger.octantsMuon[tpg+1]    = ttpInput[6+(8*(tpg/2))];
-    trigger.TTP_Bits[tpg]         = ((trigger.octantsMuon[tpg] ? 1 : 0)<<3) |
-                                    ((trigger.octantsHADveto[tpg] ? 0 : 1)<<2) |
-                                    ((trigger.octantsA[tpg] ? 0 : 1)<<1) |
-                                    (trigger.octantsEM[tpg] ? 1 : 0);
-    trigger.TTP_Bits[tpg+1]       = ((trigger.octantsMuon[tpg+1] ? 1 : 0)<<3) |
-                                    ((trigger.octantsHADveto[tpg+1] ? 0 : 1)<<2) |
-                                    ((trigger.octantsA[tpg+1] ? 0 : 1)<<1) |
-                                    (trigger.octantsEM[tpg+1] ? 1 : 0);
+    trigger.TTP_Bits[tpg]         = CreateCastorTrigBitWord(trigger,tpg);
+    trigger.TTP_Bits[tpg+1]       = CreateCastorTrigBitWord(trigger,tpg+1);
   }
 
   if( tsshift >= -2 && tsshift <= 1 ) {
