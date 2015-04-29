@@ -313,6 +313,8 @@ CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     CollectVertices();
   }
 
+  if( !SetupTriggerCollections(iEvent,iSetup) ) return;
+
   CastorL1DecisionWord = 0;
   AlgoJetDecisionWord1 = 0;
   AlgoJetDecisionWord2 = 0;
@@ -504,8 +506,6 @@ CastorMkL1TestTree::SetupTriggerCollections(const edm::Event& iEvent, const edm:
     std::cerr << "*** (HLT) Number of HLT paths of interest to high to save in tree" << std::endl;
     return false;
   }
-  std::vector< std::pair<bool,int> > HLT_path_bits;
-  HLT_path_bits.resize( HLT_path_names.size(), std::pair<bool,int>(false,-1) );
 
   bool changedConfig = false;
   if (!hltConfig.init(iEvent.getRun(), iSetup, TrigResults_.process(), changedConfig)) {
@@ -565,15 +565,7 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
 void 
 CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  bool useL1EventSetup = true;
-  bool useL1GtTriggerMenuLite = true;
-
-  m_L1GtUtils.getL1GtRunCache(iEvent, iSetup, useL1EventSetup, useL1GtTriggerMenuLite);
-
   int iErrorCode = -1;
-  int l1ConfCode = -1;
-  const bool l1Conf = m_L1GtUtils.availableL1Configuration(iErrorCode, l1ConfCode);
-  if( !l1Conf ) { std::cerr << " (*W*) No valid L1 trigger configuration; code: " << l1Conf << std::endl; }
 
   const L1GtTriggerMenu* L1GtMenu            = m_L1GtUtils.ptrL1TriggerMenuEventSetup(iErrorCode);
   const AlgorithmMap&    algorithmMap        = L1GtMenu->gtAlgorithmMap();
@@ -584,7 +576,7 @@ CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventS
     std::string algName      = itAlgo->first;
     int algoBitNumber         = ( itAlgo->second ).algoBitNumber();
     //function identical with decisionAfterMask
-    bool decision            = m_L1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
+    bool decision            = m_L1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1Algo_Menu[algoBitNumber] = algName;
@@ -598,7 +590,7 @@ if( show_debug_info ) std::cout << "*** (DEBUG) TechnicalTriggerMap size: " << t
   for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
-    bool decision            = m_L1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
+    bool decision            = m_L1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
@@ -613,19 +605,8 @@ if( show_debug_info ) std::cout << "*** (DEBUG) TechnicalTriggerMap size: " << t
 void 
 CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  if( show_debug_info ) std::cout << "*** (DEBUG) HLT_path_names.size() = " << HLT_path_names.size() << std::endl;
-  if( HLT_path_names.size() > 64 ) {
-    std::cerr << "*** (HLT) Number of HLT paths of interest to high to save in tree" << std::endl;
-    return;
-  }
   std::vector< std::pair<bool,int> > HLT_path_bits;
   HLT_path_bits.resize( HLT_path_names.size(), std::pair<bool,int>(false,-1) );
-
-  bool changedConfig = false;
-  if (!hltConfig.init(iEvent.getRun(), iSetup, TrigResults_.process(), changedConfig)) {
-    std::cerr << "*** (HLT) Initialization of HLTConfigProvider failed!!" << std::endl;
-    return;
-  }
 
   for (size_t iBitHLT = 0; iBitHLT < hltConfig.triggerNames().size(); iBitHLT++) {
     for(size_t iHLTpath = 0; iHLTpath < HLT_path_names.size(); iHLTpath++)
