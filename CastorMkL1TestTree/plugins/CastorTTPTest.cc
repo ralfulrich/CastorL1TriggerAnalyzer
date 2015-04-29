@@ -273,9 +273,11 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hRelBxMuOct"]   = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
   h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
 
-  h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",1000,0,-1);
-  h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",1000,0,-1);
-  h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",1000,0,-1);
+  h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",4000,0,4000);
+  h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",4000,0,4000);
+  h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",4000,0,4000);
+
+  h1["hOctATrig"] = fs->make<TH1D>("hOctATrig","",8,0,8);
 }
 
 
@@ -355,6 +357,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         h1["hBxTotEOct"]->Fill(evtbx+tsshift);
         filltoteocttrig = false;
       }
+
+      if( trigger.octantsA[tpg] ) h1["hOctATrig"]->Fill(tpg);
+      if( trigger.octantsA[tpg+1] ) h1["hOctATrig"]->Fill(tpg+1);
     } // end for tpg
 
 
