@@ -170,6 +170,8 @@ class CastorTTPTest : public edm::EDAnalyzer {
         bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
         bool octantsMuon[8];            /**< octant-wise muon trigger */
         unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
+        // TPGa_data_Bits only usefull for sample -2 to 1
+        unsigned int TPGa_data_Bits[8]; /*** Hauke: HTR trigger word I guess ***/
 
         void clear() {
           sample = 0;
@@ -179,8 +181,24 @@ class CastorTTPTest : public edm::EDAnalyzer {
             octantsHADveto[i] = false;
             octantsMuon[i]    = false;
             TTP_Bits[i]       = 0;
+            TPGa_data_Bits[i] = 0;
           }
         }
+
+        void print() {
+          std::cout << "sample# " << sample << "\n";
+          for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
+            std::cout << tpg << "   " 
+                      << octantsMuon[tpg]    << "  " 
+                      << octantsHADveto[tpg] << "  "  // Hadron veto
+                      << octantsA[tpg]       << "  "     // summ
+                      << octantsEM[tpg]      << "  "     // EM
+                      <<  "\t" 
+                      << TTP_Bits[tpg]       << "  " 
+                      << TPGa_data_Bits[tpg] << std::endl;
+          }
+        }
+
       };
 
 
@@ -204,7 +222,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
       bool GetCollections(const edm::Event& iEvent);
 
       void SetMuonTriggerSum(const edm::EventSetup&);
-      CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&);
+      CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&, const int&);
       void SetTPGaBits(unsigned int*, const int&, const int&);
 
       void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
@@ -300,12 +318,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
 
   for(int tsshift = -2; tsshift < 6; tsshift++){
-    CastorTTPTest::MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset);
-
-    unsigned int TPGa_data_Bits[8];
-    if( tsshift >= -2 && tsshift <= 1 ) {
-      SetTPGaBits(TPGa_data_Bits,tsshift,ts_tpg_offset);
-    }
+    CastorTTPTest::MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+    
 
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
@@ -327,7 +341,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         // }
       }
 
-      if( (trigger.TTP_Bits[tpg] != TPGa_data_Bits[tpg]) || (trigger.TTP_Bits[tpg+1] != TPGa_data_Bits[tpg+1]) ) {
+      if( (trigger.TTP_Bits[tpg] != trigger.TPGa_data_Bits[tpg]) || (trigger.TTP_Bits[tpg+1] != trigger.TPGa_data_Bits[tpg+1]) ) {
         print = true;
       }
 
@@ -345,19 +359,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
 
     if( tsshift >= -2 && tsshift <= 1 ) {
-      if(print) {
-        std::cout << "sample# " << tsshift << "\n";
-        for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
-          std::cout << tpg << "   " 
-                    << trigger.octantsMuon[tpg]    << "  " 
-                    << trigger.octantsHADveto[tpg] << "  "  // Hadron veto
-                    << trigger.octantsA[tpg]       << "  "     // summ
-                    << trigger.octantsEM[tpg]      << "  "     // EM
-                    <<  "\t" 
-                    << trigger.TTP_Bits[tpg]       << "  " 
-                    << TPGa_data_Bits[tpg] << std::endl;
-        }
-      }
+      if(print) trigger.print();
     }
 
     int noct_muon = 0;
@@ -451,7 +453,7 @@ CastorTTPTest::SetMuonTriggerSum(const edm::EventSetup& iSetup)
 }
 
 CastorTTPTest::MyCastorTrig 
-CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const int& ttp_offset)
+CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const int& ttp_offset, const int& ts_tpg_offset)
 {
   CastorTTPTest::MyCastorTrig trigger;
   trigger.clear();
@@ -479,6 +481,10 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
                                     ((trigger.octantsHADveto[tpg+1] ? 0 : 1)<<2) |
                                     ((trigger.octantsA[tpg+1] ? 0 : 1)<<1) |
                                     (trigger.octantsEM[tpg+1] ? 1 : 0);
+  }
+
+  if( tsshift >= -2 && tsshift <= 1 ) {
+    SetTPGaBits(trigger.TPGa_data_Bits,tsshift,ts_tpg_offset);
   }
 
   return trigger;
