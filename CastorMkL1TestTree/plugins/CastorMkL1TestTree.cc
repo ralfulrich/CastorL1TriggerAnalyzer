@@ -184,7 +184,7 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
 
       // ----------member data ---------------------------
       const CaloGeometry * geo;
-      L1GtUtils m_l1GtUtils;
+      L1GtUtils L1GtUtils;
       HLTConfigProvider hltConfig;
 
       // --------- flags ---------------------------------
@@ -533,23 +533,23 @@ CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventS
   bool useL1EventSetup = true;
   bool useL1GtTriggerMenuLite = true;
 
-  m_l1GtUtils.getL1GtRunCache(iEvent, iSetup, useL1EventSetup, useL1GtTriggerMenuLite);
+  L1GtUtils.getL1GtRunCache(iEvent, iSetup, useL1EventSetup, useL1GtTriggerMenuLite);
 
   int iErrorCode = -1;
   int l1ConfCode = -1;
-  const bool l1Conf = m_l1GtUtils.availableL1Configuration(iErrorCode, l1ConfCode);
+  const bool l1Conf = L1GtUtils.availableL1Configuration(iErrorCode, l1ConfCode);
   if( !l1Conf ) { std::cerr << " (*W*) No valid L1 trigger configuration; code: " << l1Conf << std::endl; }
 
-  const L1GtTriggerMenu* m_l1GtMenu          = m_l1GtUtils.ptrL1TriggerMenuEventSetup(iErrorCode);
-  const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
-  const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
+  const L1GtTriggerMenu* L1GtMenu            = L1GtUtils.ptrL1TriggerMenuEventSetup(iErrorCode);
+  const AlgorithmMap&    algorithmMap        = L1GtMenu->gtAlgorithmMap();
+  const AlgorithmMap&    technicalTriggerMap = L1GtMenu->gtTechnicalTriggerMap();
 
   if( show_debug_info ) std::cout << "*** (DEBUG) AlgorithmMap size: " << algorithmMap.size() << std::endl;
   for(CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber         = ( itAlgo->second ).algoBitNumber();
     //function identical with decisionAfterMask
-    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
+    bool decision            = L1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1Algo_Menu[algoBitNumber] = algName;
@@ -563,7 +563,7 @@ if( show_debug_info ) std::cout << "*** (DEBUG) TechnicalTriggerMap size: " << t
   for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber         = ( itAlgo->second ).algoBitNumber();
-    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
+    bool decision            = L1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
