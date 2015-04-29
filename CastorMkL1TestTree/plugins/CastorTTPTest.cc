@@ -149,7 +149,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
       void SetMuonTriggerSum(const edm::EventSetup&);
       CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&, const int&);
-      unsigned long int CreateCastorTrigBitWord(CastorTTPTest::MyCastorTrig&, const int&);
+      unsigned long int CreateTTPBitWord(CastorTTPTest::MyCastorTrig&, const int&);
       void SetTPGaBits(unsigned int*, const int&, const int&);
 
       void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
@@ -406,8 +406,8 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
     trigger.octantsHADveto[tpg+1] = ttpInput[5+(8*(tpg/2))];
     trigger.octantsMuon[tpg]      = ttpInput[7+(8*(tpg/2))];
     trigger.octantsMuon[tpg+1]    = ttpInput[6+(8*(tpg/2))];
-    trigger.TTP_Bits[tpg]         = CreateCastorTrigBitWord(trigger,tpg);
-    trigger.TTP_Bits[tpg+1]       = CreateCastorTrigBitWord(trigger,tpg+1);
+    trigger.TTP_Bits[tpg]         = CreateTTPBitWord(trigger,tpg);
+    trigger.TTP_Bits[tpg+1]       = CreateTTPBitWord(trigger,tpg+1);
   }
 
   if( tsshift >= -2 && tsshift <= 1 ) {
@@ -418,7 +418,7 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
 }
 
 unsigned long int
-CastorTTPTest::CreateCastorTrigBitWord(CastorTTPTest::MyCastorTrig& trigger, const int& tpg)
+CastorTTPTest::CreateTTPBitWord(CastorTTPTest::MyCastorTrig& trigger, const int& tpg)
 {
   std::bitset<4> Bits;
 

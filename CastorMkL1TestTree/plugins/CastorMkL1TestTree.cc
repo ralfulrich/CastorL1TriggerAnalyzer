@@ -483,7 +483,7 @@ CastorMkL1TestTree::GetGeometry(const edm::EventSetup& iSetup)
 }
 
 void 
-CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig)
+CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 { 
   if( show_trigger_menu ) {
     L1TT_Menu.clear();
@@ -495,8 +495,8 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
   AlgoBits_lowRange.reset(); AlgoBits_upperRange.reset();
   HLTBits.reset();
 
-  GetL1TriggerInfo(iEvent,iConfig);
-  GetHLTriggerInfo(iEvent,iConfig);
+  GetL1TriggerInfo(iEvent,iSetup);
+  GetHLTriggerInfo(iEvent,iSetup);
 
   CastorL1DecisionWord = (ULong64_t)L1TTBits.to_ulong();
   AlgoJetDecisionWord1 = (ULong64_t)AlgoBits_lowRange.to_ulong();
@@ -528,12 +528,12 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
 }
 
 void 
-CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig)
+CastorMkL1TestTree::GetL1TriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   bool useL1EventSetup = true;
   bool useL1GtTriggerMenuLite = true;
 
-  m_l1GtUtils.getL1GtRunCache(iEvent, iConfig, useL1EventSetup, useL1GtTriggerMenuLite);
+  m_l1GtUtils.getL1GtRunCache(iEvent, iSetup, useL1EventSetup, useL1GtTriggerMenuLite);
 
   int iErrorCode = -1;
   int l1ConfCode = -1;
@@ -576,7 +576,7 @@ if( show_debug_info ) std::cout << "*** (DEBUG) TechnicalTriggerMap size: " << t
 }
 
 void 
-CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iConfig)
+CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
   if( show_debug_info ) std::cout << "*** (DEBUG) HLT_path_names.size() = " << HLT_path_names.size() << std::endl;
   if( HLT_path_names.size() > 64 ) {
@@ -587,7 +587,7 @@ CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventS
   HLT_path_bits.resize( HLT_path_names.size(), std::pair<bool,int>(false,-1) );
 
   bool changedConfig = false;
-  if (!hltConfig.init(iEvent.getRun(), iConfig, TrigResults_.process(), changedConfig)) {
+  if (!hltConfig.init(iEvent.getRun(), iSetup, TrigResults_.process(), changedConfig)) {
     std::cerr << "*** (HLT) Initialization of HLTConfigProvider failed!!" << std::endl;
     return;
   }
