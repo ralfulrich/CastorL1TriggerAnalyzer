@@ -58,7 +58,6 @@
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerObjectMapRecord.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerObjectMap.h"
-// //#include "L1Trigger/GlobalTrigger/interface/L1GlobalTrigger.h"
 
 #include "CondFormats/L1TObjects/interface/L1GtTriggerMenu.h"
 #include "CondFormats/DataRecord/interface/L1GtTriggerMenuRcd.h"
@@ -70,6 +69,8 @@
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerReadoutRecord.h"
 #include "DataFormats/L1GlobalTrigger/interface/L1GlobalTriggerRecord.h"
 
+// Hcal Digi Info
+#include "DataFormats/HcalDigi/interface/HcalDigiCollections.h"
 
 // Castor Digi Info
 #include "CalibFormats/CastorObjects/interface/CastorCoderDb.h"
@@ -148,6 +149,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
       void SetMuonTriggerSum(const edm::EventSetup&);
       CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&, const int&);
+      unsigned long int CreateCastorTrigBitWord(CastorTTPTest::MyCastorTrig&, const int&);
       void SetTPGaBits(unsigned int*, const int&, const int&);
 
       void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
@@ -393,6 +395,7 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
   // htr 3t 3b 4t 4b 5t 5b 7t 7b map to tpg 0..7  
 
   trigger.sample   = tsshift;
+  
 
   for ( int tpg = 0; tpg < 8 ; tpg+=2 ) {
     trigger.octantsA[tpg]         = ttpInput[0+(8*(tpg/2))];
@@ -418,6 +421,21 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
   }
 
   return trigger;
+}
+
+unsigned long int
+CastorTTPTest::CreateCastorTrigBitWord(CastorTTPTest::MyCastorTrig& trigger, const int& tpg)
+{
+  std::bitset<4> Bits;
+
+  Bits[0] = trigger.octantsEM[tpg];
+  // needs to be inverted because veto
+  Bits[1] = !trigger.octantsA[tpg];
+  Bits[2] = !trigger.octantsHADveto[tpg];
+
+  Bits[3] = trigger.octantsMuon[tpg];
+
+  return Bits.to_ulong();
 }
 
 void 
