@@ -291,6 +291,16 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         filltoteocttrig = false;
       }
 
+      char buf[128];
+      if( trigger.octantsMuon[ioct] ) {
+        sprintf(buf,"hBxMuOct_%d",ioct);
+        h1[buf]->Fill(evtbx+tsshift);
+      }
+      if( !trigger.octantsA[ioct] ) {
+        sprintf(buf,"hBxTotEOct_%d",ioct);
+        h1[buf]->Fill(evtbx+tsshift);
+      }
+
       if( !trigger.octantsA[ioct] ) h1["hOctATrig"]->Fill(ioct);
     } // end for ioct
 
@@ -304,16 +314,6 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for( int ioct=0; ioct<8; ioct++) {
       if( trigger.octantsMuon[ioct] ) noct_muon++;
       if( trigger.octantsA[ioct] ) noct_tot++;
-
-      char buf[128];
-      if( trigger.octantsMuon[ioct] ) {
-        sprintf(buf,"hBxMuOct_%d",ioct);
-        h1[buf]->Fill(evtbx+tsshift);
-      }
-      if( !trigger.octantsA[ioct] ) {
-        sprintf(buf,"hBxTotEOct_%d",ioct);
-        h1[buf]->Fill(evtbx+tsshift);
-      }
     }
     // if( noct_muon == 1 && noct_tot == 0 ) 
     if( noct_muon >= 1 && noct_tot >= 7 )
