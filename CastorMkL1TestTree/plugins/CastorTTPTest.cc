@@ -523,7 +523,7 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
       std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
     std::cout << "*** L1 AlgoTrigger Menu ***" << std::endl;
     for(std::map<int,std::string>::iterator it = L1Algo_Menu.begin(); it != L1Algo_Menu.end(); it++)
-      std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
+      std::cout << "   *** L1 Algo Bit[" << it->first << "] = " << it->second << std::endl;
 
     show_trigger_menu = false;
   }

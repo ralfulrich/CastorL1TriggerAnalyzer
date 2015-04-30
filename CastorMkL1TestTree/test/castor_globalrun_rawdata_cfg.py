@@ -13,6 +13,10 @@ print 'CMSSW_BASE: {0}'.format(base_path)
 
 process = cms.Process("PEDS")
 process.load("CondCore.DBCommon.CondDBSetup_cfi")
+process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
+process.load('Configuration.StandardSequences.MagneticField_38T_cff')
+process.load('Configuration.StandardSequences.RawToDigi_cff')
+process.load('Configuration.StandardSequences.L1Reco_cff')
 
 ##process.source = cms.Source("PoolSource",
 ##    fileNames = cms.untracked.vstring(
@@ -51,7 +55,7 @@ process.source = cms.Source("PoolSource",
 #)
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1) #10000
+    input = cms.untracked.int32(1000) #10000
 )
 
 process.castorDigis = cms.EDProducer("CastorRawToDigi",
@@ -215,7 +219,10 @@ process.MessageLogger = cms.Service("MessageLogger",
                                     )
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True))
 
-process.p = cms.Path(process.castorDigis*process.dumpECA) #Digis*process.m* #process.dumpRaw --> shows BCN-counters
+process.p = cms.Path(#process.castorDigis*
+                     #process.dumpECA* #Digis*process.m* #process.dumpRaw --> shows BCN-counters
+                     process.RawToDigi*
+                     process.L1Reco)
 #process.p = cms.Path(process.dumpRaw*process.castorDigis*process.dump*process.m*process.dumpECA)
 #process.p = cms.Path(process.castorDigis*process.castorpedestalsanalysis)
 process.ep = cms.EndPath(process.out)
