@@ -174,6 +174,7 @@ class CastorMkL1TestTree : public edm::EDAnalyzer {
       void GetTriggerInfo(const edm::Event&, const edm::EventSetup&);
       void GetL1TriggerInfo(const edm::Event&, const edm::EventSetup&);
       void GetHLTriggerInfo(const edm::Event&, const edm::EventSetup&);
+      void ShowTriggerMenu();
 
       int  GetPileUp(edm::Handle< std::vector<PileupSummaryInfo> >& vPU);
 
@@ -546,18 +547,7 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
   }
 
   if( show_trigger_menu ) {
-    std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
-    for(std::map<int,std::string>::iterator it = L1TT_Menu.begin(); it != L1TT_Menu.end(); it++)
-      std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
-
-    std::cout << "*** L1 Algorith Menu ***" << std::endl;
-    for(std::map<int,std::string>::iterator it = L1Algo_Menu.begin(); it != L1Algo_Menu.end(); it++)
-      std::cout << "   *** L1 Algo Bit[" << it->first << "] = " << it->second << std::endl;    
-
-    std::cout << "*** HLT Menu ***" << std::endl;
-    for(std::map<int,std::string>::iterator it = HLT_Menu.begin(); it != HLT_Menu.end(); it++)
-      std::cout << "   *** HLT Bit[" << it->first << "] = " << it->second << std::endl;        
-
+    ShowTriggerMenu();
     show_trigger_menu = false;
   }
 }
@@ -630,6 +620,22 @@ CastorMkL1TestTree::GetHLTriggerInfo(const edm::Event& iEvent, const edm::EventS
       HLTBits[iHLTpath] = TrigResults->accept( HLT_path_bits[iHLTpath].second );
     }
   }
+}
+
+void
+CastorMkL1TestTree::ShowTriggerMenu()
+{
+  std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
+  for(std::map<int,std::string>::iterator it = L1TT_Menu.begin(); it != L1TT_Menu.end(); it++)
+    std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
+
+  std::cout << "*** L1 Algorith Menu ***" << std::endl;
+  for(std::map<int,std::string>::iterator it = L1Algo_Menu.begin(); it != L1Algo_Menu.end(); it++)
+    std::cout << "   *** L1 Algo Bit[" << it->first << "] = " << it->second << std::endl;
+
+  std::cout << "*** HLT Menu ***" << std::endl;
+  for(std::map<int,std::string>::iterator it = HLT_Menu.begin(); it != HLT_Menu.end(); it++)
+    std::cout << "   *** HLT Bit[" << it->first << "] = " << it->second << std::endl;
 }
 
 int
