@@ -252,7 +252,6 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   std::vector< CastorTTPTest::MyCastorTrig > castorTrigger; castorTrigger.clear();
   
-
   int ttp_offset    = 0; // ts of ttp data used wrt SOI
   int ts_tpg_offset = 0; // ts of tpg used wrt SOI
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
@@ -265,47 +264,46 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool filltoteocttrig = true;
     bool print = false;
     for ( int ioct = 0; ioct < 8 ; ioct++ ) {
-    
-      if( debugInfo ) {
-        if( trigger.octantsMuon[ioct] ) {
-          std::cout << "*** Muon Triggered on Octant:" << ioct << " with tsshift:" << tsshift << std::endl;
-          trigger.print();
-        }
-      }
-
-      if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] ) {
-        print = true;
-      }
-
-      if( fillmuocttrig && trigger.octantsMuon[ioct] ) {
-        h1["hRelBxMuOct"]->Fill(tsshift);
-        h1["hBxMuOct"]->Fill(evtbx+tsshift);
-        fillmuocttrig = false;
-      }
-      if( filltoteocttrig && !trigger.octantsA[ioct] ) {
-        h1["hRelBxTotEOct"]->Fill(tsshift);
-        h1["hBxTotEOct"]->Fill(evtbx+tsshift);
-        filltoteocttrig = false;
-      }
 
       char buf[128];
+
       if( trigger.octantsMuon[ioct] ) {
         sprintf(buf,"hBxMuOct_%d",ioct);
         h1[buf]->Fill(evtbx+tsshift);
+
+        if( debugInfo ) {
+          std::cout << "*** Muon Triggered on Octant:" << ioct << " with tsshift:" << tsshift << std::endl;
+          trigger.print();
+        }
+
+        if( fillmuocttrig ) {
+          h1["hRelBxMuOct"]->Fill(tsshift);
+          h1["hBxMuOct"]->Fill(evtbx+tsshift);
+          fillmuocttrig = false;
+        }
       }
+    
       if( !trigger.octantsA[ioct] ) {
         sprintf(buf,"hBxTotEOct_%d",ioct);
         h1[buf]->Fill(evtbx+tsshift);
+
+        if( filltoteocttrig ) {
+          h1["hRelBxTotEOct"]->Fill(tsshift);
+          h1["hBxTotEOct"]->Fill(evtbx+tsshift);
+          filltoteocttrig = false;
+        }
+
+        h1["hOctATrig"]->Fill(ioct);
       }
 
-      if( !trigger.octantsA[ioct] ) h1["hOctATrig"]->Fill(ioct);
+      if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] )
+        print = true;
     } // end for ioct
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
       if(print) trigger.print();
     }
-
 
     if( IsCastorMuon(trigger) )
       std::cout << "**(TTP)** In Event:" << evtnbr 
@@ -317,11 +315,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       
   } // loop over tsshift
 
-
   GetL1TTResults(iEvent,iSetup);
-
-  
-
 }
 
 // ------------ methods to get detector collections --------------------------------------
