@@ -282,14 +282,14 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         h1["hBxMuOct"]->Fill(evtbx+tsshift);
         fillmuocttrig = false;
       }
-      if( filltoteocttrig && (trigger.octantsA[tpg] || trigger.octantsA[tpg+1]) ) {
+      if( filltoteocttrig && (!trigger.octantsA[tpg] || !trigger.octantsA[tpg+1]) ) {
         h1["hRelBxTotEOct"]->Fill(tsshift);
         h1["hBxTotEOct"]->Fill(evtbx+tsshift);
         filltoteocttrig = false;
       }
 
-      if( trigger.octantsA[tpg] ) h1["hOctATrig"]->Fill(tpg);
-      if( trigger.octantsA[tpg+1] ) h1["hOctATrig"]->Fill(tpg+1);
+      if( !trigger.octantsA[tpg] ) h1["hOctATrig"]->Fill(tpg);
+      if( !trigger.octantsA[tpg+1] ) h1["hOctATrig"]->Fill(tpg+1);
     } // end for tpg
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
@@ -303,7 +303,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if( trigger.octantsMuon[ioct] ) noct_muon++;
       if( trigger.octantsA[ioct] ) noct_tot++;
     }
-    if( noct_muon == 1 && noct_tot == 0 ) 
+    // if( noct_muon == 1 && noct_tot == 0 ) 
+    if( noct_muon >= 1 && noct_tot >= 7 )
       std::cout << "**(TTP)** In Event:" << evtnbr << " Castor Muon should trigger with tsshift:" << trigger.sample << std::endl;
 
     // if(CastorDigiAndTrigDebug) trigger.Print();
