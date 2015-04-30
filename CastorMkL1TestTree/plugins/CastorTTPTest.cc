@@ -267,43 +267,32 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
     bool print = false;
-    for ( int tpg = 0; tpg < 8 ; tpg+=2 ) {
+    for ( int ioct = 0; ioct < 8 ; ioct++ ) {
     
       if( debugInfo ) {
-        if( trigger.octantsMuon[tpg] ) {
-          std::cout << "Muon         Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
+        if( trigger.octantsMuon[ioct] ) {
+          std::cout << "*** Muon Triggered on Octant:" << ioct << " with tsshift:" << tsshift << std::endl;
           trigger.print();
         }
-        // if( trigger.octantsA[tpg] ) {
-        //   std::cout << "Total Energy Triggered on Octant:" << tpg << " with tsshift:" << tsshift << std::endl;
-        // }
-        if( trigger.octantsMuon[tpg+1] ) {
-          std::cout << "Muon         Triggered on Octant:" << tpg+1 << " with tsshift:" << tsshift << std::endl;
-          trigger.print();
-        }
-        // if( trigger.octantsA[tpg+1] ) {
-        //   std::cout << "Total Energy Triggered on Octant:" << tpg+1 << " with tsshift:" << tsshift << std::endl;
-        // }
       }
 
-      if( (trigger.TTP_Bits[tpg] != trigger.TPGa_data_Bits[tpg]) || (trigger.TTP_Bits[tpg+1] != trigger.TPGa_data_Bits[tpg+1]) ) {
+      if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] ) {
         print = true;
       }
 
-      if( fillmuocttrig && (trigger.octantsMuon[tpg] || trigger.octantsMuon[tpg+1]) ) {
+      if( fillmuocttrig && trigger.octantsMuon[ioct] ) {
         h1["hRelBxMuOct"]->Fill(tsshift);
         h1["hBxMuOct"]->Fill(evtbx+tsshift);
         fillmuocttrig = false;
       }
-      if( filltoteocttrig && (!trigger.octantsA[tpg] || !trigger.octantsA[tpg+1]) ) {
+      if( filltoteocttrig && !trigger.octantsA[ioct] ) {
         h1["hRelBxTotEOct"]->Fill(tsshift);
         h1["hBxTotEOct"]->Fill(evtbx+tsshift);
         filltoteocttrig = false;
       }
 
-      if( !trigger.octantsA[tpg] ) h1["hOctATrig"]->Fill(tpg);
-      if( !trigger.octantsA[tpg+1] ) h1["hOctATrig"]->Fill(tpg+1);
-    } // end for tpg
+      if( !trigger.octantsA[ioct] ) h1["hOctATrig"]->Fill(ioct);
+    } // end for ioct
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {

@@ -77,7 +77,8 @@ process.castorDigis = cms.EDProducer("CastorRawToDigi",
 )
 
 process.out = cms.OutputModule("PoolOutputModule",
-    fileName = cms.untracked.string('{0}_unpacked.root'.format(run_number))
+    fileName = cms.untracked.string('{0}_unpacked.root'.format(run_number)),
+    outputCommands = cms.untracked.vstring('keep *')
 )
 process.dumpRaw = cms.EDAnalyzer( "DumpFEDRawDataProduct",
 
@@ -219,10 +220,11 @@ process.MessageLogger = cms.Service("MessageLogger",
                                     )
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True))
 
-process.p = cms.Path(#process.castorDigis*
-                     #process.dumpECA* #Digis*process.m* #process.dumpRaw --> shows BCN-counters
-                     process.RawToDigi*
-                     process.L1Reco)
+process.p = cms.Path(
+                     process.castorDigis*
+                     process.dumpECA) #Digis*process.m* #process.dumpRaw --> shows BCN-counters
+                     # process.RawToDigi*
+                     # process.L1Reco)
 #process.p = cms.Path(process.dumpRaw*process.castorDigis*process.dump*process.m*process.dumpECA)
 #process.p = cms.Path(process.castorDigis*process.castorpedestalsanalysis)
 process.ep = cms.EndPath(process.out)
