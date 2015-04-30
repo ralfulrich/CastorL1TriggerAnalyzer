@@ -199,16 +199,24 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
 
   // myTree = fs->make<TTree>("myTree","myTree");
 
+  int nBxBins = 4000;
+  double minBx = 0, maxBx = 4000;
+
   h1["hRelBxMuOct"]   = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
   h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
 
-  h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",4000,0,4000);
-  h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",4000,0,4000);
-  h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",4000,0,4000);
+  h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",nBxBins,minBx,maxBx);
+  h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
+  h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
 
-  // for(int ioct=0; ioct<8; ioc++) {
-  //   char
-  // }
+  char buf[128];
+  for(int ioct=0; ioct<8; ioct++) {
+    sprintf(buf,"hBxMuOct_%d",ioct);
+    h1[buf] = fs->make<TH1D>(buf,"",nBxBins,minBx,maxBx);
+
+    sprintf(buf,"hBxTotEOct_%d",ioct);
+    h1[buf] = fs->make<TH1D>(buf,"",nBxBins,minBx,maxBx);
+  }
 
   h1["hOctATrig"] = fs->make<TH1D>("hOctATrig","",8,0,8);
 }
@@ -307,6 +315,16 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     for( int ioct=0; ioct<8; ioct++) {
       if( trigger.octantsMuon[ioct] ) noct_muon++;
       if( trigger.octantsA[ioct] ) noct_tot++;
+
+      char buf[128];
+      if( trigger.octantsMuon[ioct] ) {
+        sprintf(buf,"hBxMuOct_%d",ioct);
+        h1[buf]->Fill(evtbx+tsshift);
+      }
+      if( !trigger.octantsA[ioct] ) {
+        sprintf(buf,"hBxTotEOct_%d",ioct);
+        h1[buf]->Fill(evtbx+tsshift);
+      }
     }
     // if( noct_muon == 1 && noct_tot == 0 ) 
     if( noct_muon >= 1 && noct_tot >= 7 )
