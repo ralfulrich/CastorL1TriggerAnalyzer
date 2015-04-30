@@ -316,10 +316,6 @@ CastorMkL1TestTree::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 
   if( !SetupTriggerCollections(iEvent,iSetup) ) return;
 
-  CastorL1DecisionWord = 0;
-  AlgoJetDecisionWord1 = 0;
-  AlgoJetDecisionWord2 = 0;
-  HLTDecisionWord = 0;
   GetTriggerInfo(iEvent,iSetup);
 
   myTree->Fill();
@@ -526,6 +522,11 @@ CastorMkL1TestTree::GetTriggerInfo(const edm::Event& iEvent, const edm::EventSet
     L1Algo_Menu.clear();
     HLT_Menu.clear();
   }
+
+  CastorL1DecisionWord = 0;
+  AlgoJetDecisionWord1 = 0;
+  AlgoJetDecisionWord2 = 0;
+  HLTDecisionWord = 0;
 
   L1TTBits.reset();
   AlgoBits_lowRange.reset(); AlgoBits_upperRange.reset();

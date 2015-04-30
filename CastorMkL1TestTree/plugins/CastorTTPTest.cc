@@ -166,8 +166,8 @@ class CastorTTPTest : public edm::EDAnalyzer {
       // --------- input labels for collections ----------
 
       // --------- collection handel ---------------------
-      edm::Handle<CastorTrigPrimDigiCollection> castortpg;
-      edm::Handle<HcalTTPDigiCollection>        castorttp;
+      edm::Handle<CastorTrigPrimDigiCollection> castortpg; // HTR card output
+      edm::Handle<HcalTTPDigiCollection>        castorttp; // TTP input
       edm::Handle<CastorDigiCollection>         digicoll;
 
       // --------- tree variables ------------------------
