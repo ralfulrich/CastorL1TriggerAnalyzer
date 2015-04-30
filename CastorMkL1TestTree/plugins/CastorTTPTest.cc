@@ -111,7 +111,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
           }
         }
 
-        void print() {
+        void print() const {
           std::cout << "sample# " << sample << std::endl;
           std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa" << std::endl;
           for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
@@ -150,8 +150,10 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
       void SetMuonTriggerSum(const edm::EventSetup&);
       CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&, const int&);
-      unsigned long int CreateTTPBitWord(CastorTTPTest::MyCastorTrig&, const int&);
+      unsigned long int CreateTTPBitWord(const CastorTTPTest::MyCastorTrig&, const int&);
       void SetTPGaBits(unsigned int*, const int&, const int&);
+
+      bool IsCastorMuon(const CastorTTPTest::MyCastorTrig&);
 
       void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
 
@@ -261,7 +263,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
 
   for(int tsshift = -2; tsshift < 6; tsshift++){
-    CastorTTPTest::MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+    const CastorTTPTest::MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
     
 
     bool fillmuocttrig = true;
@@ -309,15 +311,11 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       if(print) trigger.print();
     }
 
-    int noct_muon = 0;
-    int noct_tot  = 0;
-    for( int ioct=0; ioct<8; ioct++) {
-      if( trigger.octantsMuon[ioct] ) noct_muon++;
-      if( trigger.octantsA[ioct] ) noct_tot++;
-    }
-    // if( noct_muon == 1 && noct_tot == 0 ) 
-    if( noct_muon >= 1 && noct_tot >= 7 )
-      std::cout << "**(TTP)** In Event:" << evtnbr << " Castor Muon should trigger with tsshift:" << trigger.sample << std::endl;
+
+    if( IsCastorMuon(trigger) )
+      std::cout << "**(TTP)** In Event:" << evtnbr 
+                << " Castor Muon should trigger with tsshift:" << trigger.sample 
+                << std::endl;
 
     // if(CastorDigiAndTrigDebug) trigger.Print();
     castorTrigger.push_back(trigger);
@@ -434,7 +432,7 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
 }
 
 unsigned long int
-CastorTTPTest::CreateTTPBitWord(CastorTTPTest::MyCastorTrig& trigger, const int& tpg)
+CastorTTPTest::CreateTTPBitWord(const CastorTTPTest::MyCastorTrig& trigger, const int& tpg)
 {
   std::bitset<4> Bits;
 
@@ -465,6 +463,23 @@ CastorTTPTest::SetTPGaBits(unsigned int* TPGa_data_Bits, const int& tsshift, con
 
     // if( debugInfo ) std::cout << "CastorTriggerPrimitiveDigi.id().sector():" << isec << std::endl;
   }
+}
+
+bool
+CastorTTPTest::IsCastorMuon(const CastorTTPTest::MyCastorTrig& trigger)
+{
+  int noct_muon = 0;
+  int noct_tot  = 0;
+
+  for( int ioct=0; ioct<8; ioct++) {
+    if( trigger.octantsMuon[ioct] ) noct_muon++;
+    if( trigger.octantsA[ioct] ) noct_tot++;
+  }
+
+  // if( noct_muon == 1 && noct_tot == 0 ) 
+  if( noct_muon >= 1 && noct_tot >= 7 ) return true;
+
+  return false;
 }
 
 void 
