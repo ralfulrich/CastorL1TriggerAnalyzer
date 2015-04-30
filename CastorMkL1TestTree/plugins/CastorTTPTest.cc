@@ -160,6 +160,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
       L1GtUtils m_l1GtUtils;
       bool show_trigger_menu;
       std::map<int,std::string> L1TT_Menu;
+      std::map<int,std::string> L1Algo_Menu;
 
       double MuonTriggerSum_fC_Per_Sector_PositionFrontMiddleBack_TS[16][3][10];
 
@@ -204,6 +205,10 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",4000,0,4000);
   h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",4000,0,4000);
   h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",4000,0,4000);
+
+  // for(int ioct=0; ioct<8; ioc++) {
+  //   char
+  // }
 
   h1["hOctATrig"] = fs->make<TH1D>("hOctATrig","",8,0,8);
 }
@@ -490,13 +495,34 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
     }
-    if( decision && (algoBitNumber>=60 && algoBitNumber<=63) ) 
-      std::cout << "*** In Event " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
+    if( decision ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
+      std::cout << "**(L1)** " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
+
+  for (CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
+    std::string algName      = itAlgo->first;
+    int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
+    // bool algResultBeforeMask = m_l1GtUtils.decisionBeforeMask(iEvent, itAlgo->first, iErrorCode);
+    // bool algResultAfterMask  = m_l1GtUtils.decisionAfterMask (iEvent, itAlgo->first, iErrorCode);
+    // int  triggerMask         = m_l1GtUtils.triggerMask       (iEvent, itAlgo->first, iErrorCode);
+    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
+    // int  preScale            = m_l1GtUtils.prescaleFactor    (iEvent, itAlgo->first, iErrorCode);
+
+
+    if( show_trigger_menu ) {
+      L1Algo_Menu[algoBitNumber] = algName;
+    }
+    if( decision ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
+      std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
+  }
+
 
   if( show_trigger_menu ) {
     std::cout << "*** L1 TechnicalTrigger Menu ***" << std::endl;
     for(std::map<int,std::string>::iterator it = L1TT_Menu.begin(); it != L1TT_Menu.end(); it++)
+      std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
+    std::cout << "*** L1 AlgoTrigger Menu ***" << std::endl;
+    for(std::map<int,std::string>::iterator it = L1Algo_Menu.begin(); it != L1Algo_Menu.end(); it++)
       std::cout << "   *** L1 TT Bit[" << it->first << "] = " << it->second << std::endl;
 
     show_trigger_menu = false;
