@@ -3,7 +3,8 @@ import FWCore.ParameterSet.Config as cms
 #run_path = '/store/group/phys_heavyions/katkov/cas_loc_2013/'
 #run_number = 229479
 
-run_number = 241423
+run_number = 242871
+#241423
 #239821
 #239754
 
@@ -26,43 +27,46 @@ process.load('Configuration.StandardSequences.L1Reco_cff')
 ##    )
 ##)
 
-process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(
-#'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/821/00000/D6B7A994-75DC-E411-92A7-02163E01354D.root',
-#'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/895/00000/5246DFEF-92DD-E411-8012-02163E011DF0.root'
-#########'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/240/070/00000/1846A2AE-21DF-E411-BB73-02163E011C32.root'
-'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/241/423/00000/DE8BBB61-FBEB-E411-A601-02163E0133B6.root' #Lumi: [179, 266]
-#    '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/754/00000/94E8E718-75DB-E411-9D0E-02163E0123CC.root', 
-#'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/754/00000/94E8E718-75DB-E411-9D0E-02163E0123CC.root',
-#        #'file:/usr/users/ikatkov/hiforest/CMSSW_4_4_2_patch7/test/skim_conformal_test.root'
-#        'file:/storage/5/cbaus/RECO/PbPb_1380_eposLHC_HI44/job_N5_10.root'
-    )
-#   ,eventsToProcess = cms.untracked.VEventRange('239754:71:128-239754:71:128')  ####################################################
-#    ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239821:1-239821:43','239821:76-239821:172','239821:204-239821:248','239821:295-239821:355') #b1&b2
-#    ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239821:274-239821:276')#,'239821:282-239821:286') #eg-spike b1 = '239821:275-239821:275' b2 = '239821:284-239821:284'
-#     ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239821:282-239821:286')
-#      ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239895:620-239895:681')
-#      ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239895:770-239895:841')
+# process.source = cms.Source("PoolSource",
+#     fileNames = cms.untracked.vstring(
+# #'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/821/00000/D6B7A994-75DC-E411-92A7-02163E01354D.root',
+# #'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/895/00000/5246DFEF-92DD-E411-8012-02163E011DF0.root'
+# #########'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/240/070/00000/1846A2AE-21DF-E411-BB73-02163E011C32.root'
+# '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/241/423/00000/DE8BBB61-FBEB-E411-A601-02163E0133B6.root' #Lumi: [179, 266]
+# #    '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/754/00000/94E8E718-75DB-E411-9D0E-02163E0123CC.root', 
+# #'/store/data/Commissioning2015/MinimumBias/RAW/v1/000/239/754/00000/94E8E718-75DB-E411-9D0E-02163E0123CC.root',
+# #        #'file:/usr/users/ikatkov/hiforest/CMSSW_4_4_2_patch7/test/skim_conformal_test.root'
+# #        'file:/storage/5/cbaus/RECO/PbPb_1380_eposLHC_HI44/job_N5_10.root'
+#     )
+# #   ,eventsToProcess = cms.untracked.VEventRange('239754:71:128-239754:71:128')  ####################################################
+# #    ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239821:1-239821:43','239821:76-239821:172','239821:204-239821:248','239821:295-239821:355') #b1&b2
+# #    ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239821:274-239821:276')#,'239821:282-239821:286') #eg-spike b1 = '239821:275-239821:275' b2 = '239821:284-239821:284'
+# #     ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239821:282-239821:286')
+# #      ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239895:620-239895:681')
+# #      ,lumisToProcess = cms.untracked.VLuminosityBlockRange('239895:770-239895:841')
+# )
+
+process.source = cms.Source("HcalTBSource",
+   streams = cms.untracked.vstring('HCAL_Trigger', 
+                                   'HCAL_DCC690',
+                                   'HCAL_DCC691',
+                                   'HCAL_DCC692'),
+    # fileNames = cms.untracked.vstring('/store/caft2/user/campbell/castor_localruns/USC_119814.root')
+    # fileNames = cms.untracked.vstring('{0}/USC_{1}.root'.format(run_path,run_number))
+    # fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/USC_229479.root')
+    fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/USC_242871.root')
 )
 
-#process.source = cms.Source("HcalTBSource",
-#    streams = cms.untracked.vstring('HCAL_Trigger', 
-#        'HCAL_DCC690','HCAL_DCC691','HCAL_DCC692', 
-#),
-    #fileNames = cms.untracked.vstring('/store/caft2/user/campbell/castor_localruns/USC_119814.root')
-##    fileNames = cms.untracked.vstring('{0}/USC_{1}.root'.format(run_path,run_number))
-    #fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/USC_229479.root')
-#)
-
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1000) #10000
+    input = cms.untracked.int32(-1) #10000
 )
 
 process.castorDigis = cms.EDProducer("CastorRawToDigi",
    CastorFirstFED = cms.int32(690),
    FilterDataQuality = cms.bool(True),
    ExceptionEmptyData = cms.untracked.bool(True),
-   InputLabel = cms.InputTag("rawDataCollector"), #source #rawDataCollector
+   # InputLabel = cms.InputTag("rawDataCollector"), #source #rawDataCollector
+   InputLabel = cms.InputTag("source"), #source #rawDataCollector
    #UnpackCalib = cms.untracked.bool(False),
    # castor technical trigger processor
    UnpackTTP = cms.bool(True),
@@ -78,6 +82,7 @@ process.castorDigis = cms.EDProducer("CastorRawToDigi",
 
 process.out = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string('{0}_unpacked.root'.format(run_number)),
+    # fileName = cms.untracked.string('localrun_upacked.root'),
     outputCommands = cms.untracked.vstring('keep *')
 )
 process.dumpRaw = cms.EDAnalyzer( "DumpFEDRawDataProduct",
