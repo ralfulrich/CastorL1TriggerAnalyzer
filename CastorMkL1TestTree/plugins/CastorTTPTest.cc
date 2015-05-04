@@ -463,18 +463,11 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
   const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
   const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
 
-  UNUSED(algorithmMap);
-
 
   for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
-    // bool algResultBeforeMask = m_l1GtUtils.decisionBeforeMask(iEvent, itAlgo->first, iErrorCode);
-    // bool algResultAfterMask  = m_l1GtUtils.decisionAfterMask (iEvent, itAlgo->first, iErrorCode);
-    // int  triggerMask         = m_l1GtUtils.triggerMask       (iEvent, itAlgo->first, iErrorCode);
-    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
-    // int  preScale            = m_l1GtUtils.prescaleFactor    (iEvent, itAlgo->first, iErrorCode);
-
+    bool decision            = m_l1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
@@ -486,11 +479,7 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
   for (CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
-    // bool algResultBeforeMask = m_l1GtUtils.decisionBeforeMask(iEvent, itAlgo->first, iErrorCode);
-    // bool algResultAfterMask  = m_l1GtUtils.decisionAfterMask (iEvent, itAlgo->first, iErrorCode);
-    // int  triggerMask         = m_l1GtUtils.triggerMask       (iEvent, itAlgo->first, iErrorCode);
-    bool decision            = m_l1GtUtils.decision          (iEvent, itAlgo->first, iErrorCode);
-    // int  preScale            = m_l1GtUtils.prescaleFactor    (iEvent, itAlgo->first, iErrorCode);
+    bool decision            = m_l1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
 
 
     if( show_trigger_menu ) {
