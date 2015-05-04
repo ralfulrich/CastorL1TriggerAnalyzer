@@ -331,14 +331,33 @@ bool
 CastorTTPTest::GetCollections(const edm::Event& iEvent)
 {
   // the collection types are defined in  DataFormats/HcalDigi/interface/HcalDigiCollections.h
-  // iEvent.getByType(castorttp);
-  iEvent.getByLabel("castorDigis",castorttp);
-  iEvent.getByLabel("castorDigis",digicoll);
-  iEvent.getByLabel("castorDigis",castortpg);
+  try{ iEvent.getByLabel("castorDigis", castorttp); }
+  catch(...) { edm::LogWarning(" HcalTTPDigiCollection ") << " Cannot get HcalTTPDigiCollection " << std::endl; }
+  
+  if( !castorttp.isValid() || castorttp.failedToGet() ) {
+    edm::LogWarning(" HcalTTPDigiCollection ") << " Cannot read HcalTTPDigiCollection " << std::endl;
+    return false;
+  }
 
+  try{ iEvent.getByLabel("castorDigis", digicoll); }
+  catch(...) { edm::LogWarning(" CastorDigiCollection ") << " Cannot get CastorDigiCollection " << std::endl; }
+  
+  if( !digicoll.isValid() || digicoll.failedToGet() ) {
+    edm::LogWarning(" CastorDigiCollection ") << " Cannot read CastorDigiCollection " << std::endl;
+    return false;
+  }
+
+  try{ iEvent.getByLabel("castorDigis", castortpg); }
+  catch(...) { edm::LogWarning(" CastorTrigPrimDigiCollection ") << " Cannot get CastorTrigPrimDigiCollection " << std::endl; }
+  
+  if( !castortpg.isValid() || castortpg.failedToGet() ) {
+    edm::LogWarning(" CastorTrigPrimDigiCollection ") << " Cannot read CastorTrigPrimDigiCollection " << std::endl;
+    return false;
+  }
 
   return true;
 }
+
 
 CastorTTPTest::MyCastorTrig 
 CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const int& ttp_offset, const int& ts_tpg_offset)
@@ -372,6 +391,7 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
 
   return trigger;
 }
+
 
 unsigned long int
 CastorTTPTest::CreateTTPBitWord(const CastorTTPTest::MyCastorTrig& trigger, const int& tpg)
