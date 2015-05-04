@@ -36,7 +36,7 @@ process.source = cms.Source("HcalTBSource",
 )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1) #10000
+    input = cms.untracked.int32(-10000) #10000
 )
 
 process.castorDigis = cms.EDProducer("CastorRawToDigi",
@@ -117,7 +117,7 @@ process.GlobalTag.globaltag = 'GR_P_V49::All'
 #################################################################################################################################
 #################################################################################################################################
 process.castorl1test = cms.EDAnalyzer('CastorTTPTest',
-    debugInfo = cms.bool(True),
+    debugInfo = cms.bool(False),
     ShowTriggerMenu = cms.bool(True)
 )
 #################################################################################################################################
@@ -143,6 +143,7 @@ process.load("FWCore.MessageService.MessageLogger_cfi")
 #                                     detailedInfo   = cms.untracked.PSet(threshold = cms.untracked.string('INFO'),filename = cms.untracked.string('cinfo.log')),
 #                                     cerr           = cms.untracked.PSet(threshold = cms.untracked.string('WARNING'),filename = cms.untracked.string('cerr.log'))
 #                                     )
+process.MessageLogger.cerr.FwkReport.reportEvery = 5000
 process.options = cms.untracked.PSet(wantSummary = cms.untracked.bool(True))
 #################################################################################################################################
 

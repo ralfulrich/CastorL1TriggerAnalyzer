@@ -296,19 +296,25 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         h1["hOctATrig"]->Fill(ioct);
       }
 
-      if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] )
+      if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] ) {  
         print = true;
+      }
     } // end for ioct
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
-      if(print) trigger.print();
+      if(print) {
+        std::cout << "*** TTP Input != HTR output with tsshift:" << tsshift << std::endl;
+        trigger.print();
+      }
     }
 
-    if( IsCastorMuon(trigger) )
+    if( IsCastorMuon(trigger) ) {
       std::cout << "**(TTP)** In Event:" << evtnbr 
                 << " Castor Muon should trigger with tsshift:" << trigger.sample 
                 << std::endl;
+      trigger.print();
+    }
 
     // if(CastorDigiAndTrigDebug) trigger.Print();
     castorTrigger.push_back(trigger);
