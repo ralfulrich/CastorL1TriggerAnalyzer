@@ -32,11 +32,13 @@ process.source = cms.Source("HcalTBSource",
                                    'HCAL_DCC690',
                                    'HCAL_DCC691',
                                    'HCAL_DCC692'),
-    fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/USC_242871.root')
+    # fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/USC_242871.root')
+    # fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/USC_242872.root')
+    fileNames = cms.untracked.vstring('/store/group/phys_heavyions/katkov/cas_loc_2013/USC_242879.root')
 )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-10000) #10000
+    input = cms.untracked.int32(100) #10000
 )
 
 process.castorDigis = cms.EDProducer("CastorRawToDigi",
@@ -118,7 +120,7 @@ process.GlobalTag.globaltag = 'GR_P_V49::All'
 #################################################################################################################################
 process.castorl1test = cms.EDAnalyzer('CastorTTPTest',
     debugInfo = cms.bool(False),
-    ShowTriggerMenu = cms.bool(True)
+    ShowTriggerMenu = cms.bool(False)
 )
 #################################################################################################################################
 

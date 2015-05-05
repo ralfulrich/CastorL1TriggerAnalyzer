@@ -203,10 +203,12 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
 
   h1["hRelBxMuOct"]   = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
   h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
+  h1["hRelBxGlCasMu"] = fs->make<TH1D>("hRelBxGlCasMu","",10,-3.5,6.5);
 
   h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",nBxBins,minBx,maxBx);
   h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
   h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
+  h1["hBxGlCasMu"] = fs->make<TH1D>("hBxGlCasMu","",nBxBins,minBx,maxBx);
 
   char buf[128];
   for(int ioct=0; ioct<8; ioct++) {
@@ -310,6 +312,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
 
     if( IsCastorMuon(trigger) ) {
+      h1["hRelBxGlCasMu"]->Fill(tsshift);
+      h1["hBxGlCasMu"]->Fill(evtbx+tsshift);
+
       std::cout << "**(TTP)** In Event:" << evtnbr 
                 << " Castor Muon should trigger with tsshift:" << trigger.sample 
                 << std::endl;
