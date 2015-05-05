@@ -483,7 +483,7 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
     }
-    if( decision ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
+    if( decision && debugInfo ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
       std::cout << "**(L1)** " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
 
@@ -496,7 +496,7 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     if( show_trigger_menu ) {
       L1Algo_Menu[algoBitNumber] = algName;
     }
-    if( decision ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
+    if( decision && debugInfo ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
       std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
 
