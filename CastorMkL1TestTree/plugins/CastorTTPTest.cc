@@ -152,6 +152,9 @@ class CastorTTPTest : public edm::EDAnalyzer {
       unsigned long int CreateTTPBitWord(const CastorTTPTest::MyCastorTrig&, const int&);
       void SetTPGaBits(unsigned int*, const int&, const int&);
 
+      // create only muon and octantA trigger correctly NOT the other ones
+      CastorTTPTest::MyCastorTrig GetTTPperTSshiftFromDigis(const int&, const int&);
+
       bool IsCastorMuon(const CastorTTPTest::MyCastorTrig&);
 
       void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
@@ -182,6 +185,10 @@ class CastorTTPTest : public edm::EDAnalyzer {
 //
 // constants, enums and typedefs
 //
+
+const unsigned int kNCastorDigiTimeSlices = 6;
+const unsigned int kNCastorSectors = 16;
+const unsigned int kNCastorModules = 14;
 
 //
 // static data member definitions
@@ -326,6 +333,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       
   } // loop over tsshift
 
+  GetTTPperTSshiftFromDigis(0,0);
+
   GetL1TTResults(iEvent,iSetup);
 }
 
@@ -436,6 +445,62 @@ CastorTTPTest::SetTPGaBits(unsigned int* TPGa_data_Bits, const int& tsshift, con
 
     // if( debugInfo ) std::cout << "CastorTriggerPrimitiveDigi.id().sector():" << isec << std::endl;
   }
+}
+
+
+// create only muon and octantA trigger correctly NOT the other ones
+CastorTTPTest::MyCastorTrig
+CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
+{
+  CastorTTPTest::MyCastorTrig trigger;
+  trigger.clear();
+
+  unsigned int digi_adc_sector_module[kNCastorSectors][kNCastorModules];
+
+  CastorDigiCollection::const_iterator const_iterator_digi;
+  for(const_iterator_digi = digicoll->begin(); const_iterator_digi != digicoll->end(); const_iterator_digi++) {
+    const CastorDataFrame& digi = *const_iterator_digi;
+
+    int digi_sector = digi.id().sector();
+    int digi_module = digi.id().module();
+
+    digi_adc_sector_module[digi_sector][digi_module] = digi[ts].adc();
+  }
+
+  // first set to a fixed value
+  // needs to be updated
+  const unsigned int threshold_adc = 12;
+  // the last two hadronic modules are not considered
+  const unsigned int trigger_modules = kNCastorModules - 2;
+
+  trigger.sample = ts + ts_offset;
+  // reset all to true means all octants have NO veto
+  // check later if veto is given
+  for(unsigned int ioct=0; ioct<8; ioct++) trigger.octantsA[ioct] = true;
+
+  for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
+    // for the muon trigger the modules 1-12 in every sector a seperated
+    // into four segements 1-3,...,9-12 called tower
+    // has nothing todo with castor tower
+    unsigned int NChannelsAboveNoisePerTower[4] = {0,0,0,0};
+    unsigned int NChannelsAboveNoise = 0;
+    unsigned int NTowersAboveNoise = 0;
+
+    for(unsigned int imod=0; imod<trigger_modules; imod++) {
+      if( digi_adc_sector_module[isec][imod] >= threshold_adc )
+        NChannelsAboveNoisePerTower[(imod*4)/trigger_modules]++;
+    }
+
+    for(unsigned int itow=0; itow<4; itow++) {
+      NChannelsAboveNoise += NChannelsAboveNoisePerTower[itow];
+      if( NChannelsAboveNoisePerTower[itow] > 0 ) NTowersAboveNoise++;
+    }
+
+    if( NChannelsAboveNoise > 3 ) trigger.octantsA[isec/2] = false;
+    if( NTowersAboveNoise > 2 ) trigger.octantsMuon[isec/2] = true;
+  }
+
+  return trigger;
 }
 
 bool
