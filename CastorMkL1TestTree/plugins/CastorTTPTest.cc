@@ -189,6 +189,8 @@ class CastorTTPTest : public edm::EDAnalyzer {
 const unsigned int kNCastorDigiTimeSlices = 6;
 const unsigned int kNCastorSectors = 16;
 const unsigned int kNCastorModules = 14;
+const unsigned int kMuonThresholdTableAdc[2][12] = {{12,11,11,10,11,12,10,11,10,15,11,10},
+                                                    {11,11,10,11,10,10,11,11,11,12,10,10}};
 
 //
 // static data member definitions
@@ -261,13 +263,15 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   std::vector< CastorTTPTest::MyCastorTrig > castorTrigger; castorTrigger.clear();
   
-  int ttp_offset    = 0; // ts of ttp data used wrt SOI
-  int ts_tpg_offset = 0; // ts of tpg used wrt SOI
+  int ttp_offset     = 0; // ts of ttp data used wrt SOI
+  int ts_tpg_offset  = 0; // ts of tpg used wrt SOI
+  int ts_digi_offset = 4; // ts of digi compared to ttp=0
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
 
-  for(int tsshift = -2; tsshift < 6; tsshift++){
+  // for(int tsshift = -2; tsshift < 6; tsshift++){
+  for(int tsshift = -2; tsshift < 2; tsshift++){
     const CastorTTPTest::MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
-    
+    const CastorTTPTest::MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift+ts_digi_offset,ts_digi_offset);
 
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
@@ -283,6 +287,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         if( debugInfo ) {
           std::cout << "*** Muon Triggered on Octant:" << ioct << " with tsshift:" << tsshift << std::endl;
           trigger.print();
+          std::cout << "from digis:" << std::endl;
+          digi_trigger.print();
         }
 
         if( fillmuocttrig ) {
@@ -461,19 +467,16 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
   for(const_iterator_digi = digicoll->begin(); const_iterator_digi != digicoll->end(); const_iterator_digi++) {
     const CastorDataFrame& digi = *const_iterator_digi;
 
-    int digi_sector = digi.id().sector();
-    int digi_module = digi.id().module();
+    int digi_sector = digi.id().sector() - 1;
+    int digi_module = digi.id().module() - 1;
 
     digi_adc_sector_module[digi_sector][digi_module] = digi[ts].adc();
   }
 
-  // first set to a fixed value
-  // needs to be updated
-  const unsigned int threshold_adc = 12;
   // the last two hadronic modules are not considered
   const unsigned int trigger_modules = kNCastorModules - 2;
 
-  trigger.sample = ts + ts_offset;
+  trigger.sample = ts;
   // reset all to true means all octants have NO veto
   // check later if veto is given
   for(unsigned int ioct=0; ioct<8; ioct++) trigger.octantsA[ioct] = true;
@@ -487,17 +490,17 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
     unsigned int NTowersAboveNoise = 0;
 
     for(unsigned int imod=0; imod<trigger_modules; imod++) {
-      if( digi_adc_sector_module[isec][imod] >= threshold_adc )
+      if( digi_adc_sector_module[isec][imod] >= kMuonThresholdTableAdc[isec%2][imod] ) {
         NChannelsAboveNoisePerTower[(imod*4)/trigger_modules]++;
+        NChannelsAboveNoise++;
+      }
     }
 
-    for(unsigned int itow=0; itow<4; itow++) {
-      NChannelsAboveNoise += NChannelsAboveNoisePerTower[itow];
+    for(unsigned int itow=0; itow<4; itow++)
       if( NChannelsAboveNoisePerTower[itow] > 0 ) NTowersAboveNoise++;
-    }
 
-    if( NChannelsAboveNoise > 3 ) trigger.octantsA[isec/2] = false;
-    if( NTowersAboveNoise > 2 ) trigger.octantsMuon[isec/2] = true;
+    if( NTowersAboveNoise > 2 )        trigger.octantsMuon[isec/2] = true;
+    else if( NChannelsAboveNoise > 3 ) trigger.octantsA[isec/2]    = false;
   }
 
   return trigger;
