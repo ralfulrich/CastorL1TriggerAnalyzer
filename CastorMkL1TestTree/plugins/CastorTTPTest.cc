@@ -99,6 +99,8 @@ class CastorTTPTest : public edm::EDAnalyzer {
         // TPGa_data_Bits only usefull for sample -2 to 1
         unsigned int TPGa_data_Bits[8]; /*** Hauke: HTR trigger word I guess ***/
 
+        bool sector_muon_trigger[16][12]; /*** Hauke: channel above threshold for muon ***/
+
         void clear() {
           sample = 0;
           for(int i=0; i<8; i++) {
@@ -109,6 +111,9 @@ class CastorTTPTest : public edm::EDAnalyzer {
             TTP_Bits[i]       = 0;
             TPGa_data_Bits[i] = 0;
           }
+          for(int i=0; i<16; i++)
+            for(int j=0; j<12; j++)
+              sector_muon_trigger[i][j] = false;
         }
 
         void print() const {
@@ -123,6 +128,27 @@ class CastorTTPTest : public edm::EDAnalyzer {
                       << "\t" 
                       << TTP_Bits[tpg]       << "  " 
                       << TPGa_data_Bits[tpg] << std::endl;
+          }
+        }
+
+        void detail_print() const {
+          std::cout << "sample# " << sample << std::endl;
+          std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa\tN_ch>Noise" << std::endl;
+          for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
+            std::cout << tpg << "   " 
+                      << octantsMuon[tpg]    << "  " 
+                      << octantsHADveto[tpg] << "  "  // Hadron veto
+                      << octantsA[tpg]       << "  "     // summ
+                      << octantsEM[tpg]      << "  "     // EM
+                      << "\t" 
+                      << TTP_Bits[tpg]       << "   " 
+                      << TPGa_data_Bits[tpg] << "   "
+                      << "\t";
+            for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2][i] << " ";
+            std::cout << std::endl;
+            std::cout << "                \t        \t";
+            for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2+1][i] << " ";
+            std::cout << std::endl;
           }
         }
 
@@ -269,27 +295,24 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
 
   // for(int tsshift = -2; tsshift < 6; tsshift++){
+  // change from 6 to 2 because with a ts_digi_offset of 4 tsshift=2 means look at digi ts 6 which is already the last one
   for(int tsshift = -2; tsshift < 2; tsshift++){
-    const CastorTTPTest::MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+    const CastorTTPTest::MyCastorTrig trigger      = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
     const CastorTTPTest::MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift+ts_digi_offset,ts_digi_offset);
 
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
-    bool print = false;
+    bool htr_ttp_diff_print = false;
+    bool muon_trig_print = false;
     for ( int ioct = 0; ioct < 8 ; ioct++ ) {
 
       char buf[128];
 
       if( trigger.octantsMuon[ioct] ) {
+        muon_trig_print = true;
+
         sprintf(buf,"hBxMuOct_%d",ioct);
         h1[buf]->Fill(evtbx+tsshift);
-
-        if( debugInfo ) {
-          std::cout << "*** Muon Triggered on Octant:" << ioct << " with tsshift:" << tsshift << std::endl;
-          trigger.print();
-          std::cout << "from digis:" << std::endl;
-          digi_trigger.print();
-        }
 
         if( fillmuocttrig ) {
           h1["hRelBxMuOct"]->Fill(tsshift);
@@ -312,16 +335,23 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
 
       if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] ) {  
-        print = true;
+        htr_ttp_diff_print = true;
       }
     } // end for ioct
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
-      if(print) {
+      if(htr_ttp_diff_print) {
         std::cout << "*** TTP Input != HTR output with tsshift:" << tsshift << std::endl;
         trigger.print();
       }
+    }
+
+    if( muon_trig_print && debugInfo ) {
+      std::cout << "*** Muon Triggered on at least one Octant:" << std::endl;
+      trigger.print();
+      std::cout << "    from own digi reco:" << std::endl;
+      digi_trigger.detail_print();
     }
 
     if( IsCastorMuon(trigger) ) {
@@ -491,7 +521,8 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
 
     for(unsigned int imod=0; imod<trigger_modules; imod++) {
       if( digi_adc_sector_module[isec][imod] >= kMuonThresholdTableAdc[isec%2][imod] ) {
-        NChannelsAboveNoisePerTower[(imod*4)/trigger_modules]++;
+        trigger.sector_muon_trigger[isec][imod] = true;
+        NChannelsAboveNoisePerTower[imod/3]++;
         NChannelsAboveNoise++;
       }
     }
@@ -564,7 +595,7 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     if( show_trigger_menu ) {
       L1Algo_Menu[algoBitNumber] = algName;
     }
-    if( decision && debugInfo ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
+    if( decision && debugInfo && (algoBitNumber>=60 && algoBitNumber<=63) ) 
       std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
 

@@ -98,7 +98,7 @@ process.source = cms.Source("PoolSource",
 # )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-100) #10000
+    input = cms.untracked.int32(10000) #10000
 )
 
 process.castorDigis = cms.EDProducer("CastorRawToDigi",
@@ -179,7 +179,7 @@ process.GlobalTag.globaltag = 'GR_P_V49::All'
 #################################################################################################################################
 #################################################################################################################################
 process.castorl1test = cms.EDAnalyzer('CastorTTPTest',
-    debugInfo = cms.bool(False),
+    debugInfo = cms.bool(True),
     ShowTriggerMenu = cms.bool(False)
 )
 #################################################################################################################################
