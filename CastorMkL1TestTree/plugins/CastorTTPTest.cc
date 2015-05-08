@@ -133,7 +133,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
         void detail_print() const {
           std::cout << "sample# " << sample << std::endl;
-          std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa\tN_ch>Noise" << std::endl;
+          std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa\tch>Noise" << std::endl;
           for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
             std::cout << tpg << "   " 
                       << octantsMuon[tpg]    << "  " 
@@ -215,8 +215,23 @@ class CastorTTPTest : public edm::EDAnalyzer {
 const unsigned int kNCastorDigiTimeSlices = 6;
 const unsigned int kNCastorSectors = 16;
 const unsigned int kNCastorModules = 14;
-const unsigned int kMuonThresholdTableAdc[2][12] = {{12,11,11,10,11,12,10,11,10,15,11,10},
-                                                    {11,11,10,11,10,10,11,11,11,12,10,10}};
+const unsigned int kMuonThresholdTableAdc[16][12] = 
+  {{11,10,14,11,12,11,10,19,11,30,11,10},
+   {11,11,13,12,18,11,10,11,12,11,10,11},
+   {14,11,11,11,11,13,23,11,11,10,10,11},
+   {14,10,12,21,10,10,10,11,11,10,11,11},
+   {12,14,10,11,10,19,11,12,12,10,10,11},
+   {10,11,11,11,14,10,11,11,11,10,11,11},
+   {10,11,11,11,12,11,18,10,11,11,11,10},
+   {11,10,10,11,11,11,11,11,12,11,10,10},
+   {10,11,11,11,11,14,11,11,18,10,11,11},
+   {11,11,10,10,10,11,11,11,10,10,23,11},
+   {11,10,10,10,10,13,10,10,10,11,10,12},
+   {10,11,10,10,10,12,11,11,10,11,11,10},
+   {11,13,12,13,12,11,11,10,10,10,20,11},
+   {11,10,11,10,26,10,11,12,10,10,11,11},
+   {12,11,11,10,11,12,10,11,10,15,11,10},
+   {11,11,10,11,10,10,11,11,11,12,10,10}};
 
 //
 // static data member definitions
@@ -520,7 +535,7 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
     unsigned int NTowersAboveNoise = 0;
 
     for(unsigned int imod=0; imod<trigger_modules; imod++) {
-      if( digi_adc_sector_module[isec][imod] >= kMuonThresholdTableAdc[isec%2][imod] ) {
+      if( digi_adc_sector_module[isec][imod] >= kMuonThresholdTableAdc[isec][imod] ) {
         trigger.sector_muon_trigger[isec][imod] = true;
         NChannelsAboveNoisePerTower[imod/3]++;
         NChannelsAboveNoise++;
@@ -530,8 +545,8 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
     for(unsigned int itow=0; itow<4; itow++)
       if( NChannelsAboveNoisePerTower[itow] > 0 ) NTowersAboveNoise++;
 
-    if( NTowersAboveNoise > 2 )        trigger.octantsMuon[isec/2] = true;
-    else if( NChannelsAboveNoise > 3 ) trigger.octantsA[isec/2]    = false;
+    if( NTowersAboveNoise > 2 )   trigger.octantsMuon[isec/2] = true;
+    if( NChannelsAboveNoise > 3 ) trigger.octantsA[isec/2]    = false;
   }
 
   return trigger;
