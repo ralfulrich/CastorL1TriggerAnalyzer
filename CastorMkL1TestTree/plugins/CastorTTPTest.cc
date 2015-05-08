@@ -88,16 +88,17 @@
 //-- trigger helper struct
 class MyCastorTrig {
 public:
-  short int sample;               /**< Time sample; 0 corresponds to the triggering sample */ 
-  //  std::vector<bool> ttpInput;     /**< ttp Inputs; more infor from Alan Camplell */ 
-  bool octantsA[8];               /**< octant-wise trigger info for threshold A */ 
-  bool octantsEM[8];              /**< octant-wise EM trigger  */ 
-  bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
-  bool octantsMuon[8];            /**< octant-wise muon trigger */
-  unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
+  short int sample;                          /**< Time sample; 0 corresponds to the triggering sample */ 
+  //  std::vector<bool> ttpInput;            /**< ttp Inputs; more infor from Alan Camplell */ 
+  bool octantsA[8];                          /**< octant-wise trigger info for threshold A */ 
+  bool octantsEM[8];                         /**< octant-wise EM trigger  */ 
+  bool octantsHADveto[8];                    /**< octant-wise veto on HAD */ 
+  bool octantsMuon[8];                       /**< octant-wise muon trigger */
+  unsigned int TTP_Bits[8];                  /*** Hauke: TTP trigger word I guess ***/
   // TPGa_data_Bits only usefull for sample -2 to 1
-  unsigned int TPGa_data_Bits[8]; /*** Hauke: HTR trigger word I guess ***/
-  bool sector_muon_trigger[16][12]; /*** Hauke: channel above threshold for muon ***/
+  unsigned int TPGa_data_Bits[8];            /*** Hauke: HTR trigger word I guess ***/
+  bool channel_above_muon_threshold[16][12]; /*** Hauke: channel above threshold for muon trigger ***/
+
   void clear() {
     sample = 0;
     for(int i=0; i<8; i++) {
@@ -110,7 +111,7 @@ public:
     }
     for(int i=0; i<16; i++)
       for(int j=0; j<12; j++)
-        sector_muon_trigger[i][j] = false;
+        channel_above_muon_threshold[i][j] = false;
   }
   void print() const {
     std::cout << "sample# " << sample << std::endl;
@@ -119,8 +120,8 @@ public:
       std::cout << tpg << "   " 
                 << octantsMuon[tpg]    << "  " 
                 << octantsHADveto[tpg] << "  "  // Hadron veto
-                << octantsA[tpg]       << "  "     // summ
-                << octantsEM[tpg]      << "  "     // EM
+                << octantsA[tpg]       << "  "  // summ
+                << octantsEM[tpg]      << "  "  // EM
                 << "\t" 
                 << TTP_Bits[tpg]       << "  " 
                 << TPGa_data_Bits[tpg] << std::endl;
@@ -133,17 +134,32 @@ public:
       std::cout << tpg << "   " 
                 << octantsMuon[tpg]    << "  " 
                 << octantsHADveto[tpg] << "  "  // Hadron veto
-                << octantsA[tpg]       << "  "     // summ
-                << octantsEM[tpg]      << "  "     // EM
+                << octantsA[tpg]       << "  "  // summ
+                << octantsEM[tpg]      << "  "  // EM
                 << "\t" 
                 << TTP_Bits[tpg]       << "   " 
                 << TPGa_data_Bits[tpg] << "   "
                 << "\t";
-      for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2][i] << " ";
+      for(int i=0; i<12; i++) std::cout << channel_above_muon_threshold[tpg*2][i] << " ";
       std::cout << std::endl;
       std::cout << "                \t        \t";
-      for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2+1][i] << " ";
+      for(int i=0; i<12; i++) std::cout << channel_above_muon_threshold[tpg*2+1][i] << " ";
       std::cout << std::endl;
+    }
+  }
+  // prints 0 for NO difference and 1 for Differentce
+  // but does this only for the single bits NOT for trigger word and channels above noise
+  void diff_print(const MyCastorTrig& diff_trigger) const {
+    std::cout <<"=== Diff between two TTP's ===" << std::endl;
+    std::cout << "sample# " << sample << std::endl;
+    std::cout << "tpg M  Hv A  EM " << std::endl;
+    for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
+      std::cout << tpg << "   " 
+                << (octantsMuon[tpg]    != diff_trigger.octantsMuon[tpg]   ) << "  " 
+                << (octantsHADveto[tpg] != diff_trigger.octantsHADveto[tpg]) << "  "  // Hadron veto
+                << (octantsA[tpg]       != diff_trigger.octantsA[tpg]      ) << "  "  // summ
+                << (octantsEM[tpg]      != diff_trigger.octantsEM[tpg]     ) << "  "  // EM
+                << std::endl;
     }
   }
 };
@@ -314,7 +330,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // change from 6 to 2 because with a ts_digi_offset of 4 tsshift=2 means look at digi ts 6 which is already the last one
   for(int tsshift = -2; tsshift < 2; tsshift++){
     const MyCastorTrig trigger      = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
-    const MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift+ts_digi_offset,ts_digi_offset);
+    const MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift,ts_digi_offset);
 
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
@@ -370,6 +386,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       trigger.print();
       std::cout << "    from own digi reco:" << std::endl;
       digi_trigger.detail_print();
+      digi_trigger.diff_print(trigger);
     }
 
     if( IsCastorMuon(trigger) ) {
@@ -386,8 +403,6 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     castorTrigger.push_back(trigger);
       
   } // loop over tsshift
-
-  GetTTPperTSshiftFromDigis(0,0);
 
   GetL1TTResults(iEvent,iSetup);
 }
@@ -504,10 +519,12 @@ CastorTTPTest::SetTPGaBits(unsigned int* TPGa_data_Bits, const int& tsshift, con
 
 // create only muon and octantA trigger correctly NOT the other ones
 MyCastorTrig
-CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
+CastorTTPTest::GetTTPperTSshiftFromDigis(const int& tsshift, const int& ts_offset)
 {
   MyCastorTrig trigger;
   trigger.clear();
+
+  int ts = tsshift + ts_offset;
 
   unsigned int digi_adc_sector_module[kNCastorSectors][kNCastorModules];
 
@@ -539,7 +556,7 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
 
     for(unsigned int imod=0; imod<trigger_modules; imod++) {
       if( digi_adc_sector_module[isec][imod] >= kMuonThresholdTableAdc[isec][imod] ) {
-        trigger.sector_muon_trigger[isec][imod] = true;
+        trigger.channel_above_muon_threshold[isec][imod] = true;
         NChannelsAboveNoisePerTower[imod/3]++;
         NChannelsAboveNoise++;
       }
