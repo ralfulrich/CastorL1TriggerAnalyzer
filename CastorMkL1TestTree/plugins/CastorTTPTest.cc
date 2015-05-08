@@ -85,74 +85,71 @@
 // class declaration
 //
 
+//-- trigger helper struct
+class MyCastorTrig {
+public:
+  short int sample;               /**< Time sample; 0 corresponds to the triggering sample */ 
+  //  std::vector<bool> ttpInput;     /**< ttp Inputs; more infor from Alan Camplell */ 
+  bool octantsA[8];               /**< octant-wise trigger info for threshold A */ 
+  bool octantsEM[8];              /**< octant-wise EM trigger  */ 
+  bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
+  bool octantsMuon[8];            /**< octant-wise muon trigger */
+  unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
+  // TPGa_data_Bits only usefull for sample -2 to 1
+  unsigned int TPGa_data_Bits[8]; /*** Hauke: HTR trigger word I guess ***/
+  bool sector_muon_trigger[16][12]; /*** Hauke: channel above threshold for muon ***/
+  void clear() {
+    sample = 0;
+    for(int i=0; i<8; i++) {
+      octantsA[i]       = false;
+      octantsEM[i]      = false;
+      octantsHADveto[i] = false;
+      octantsMuon[i]    = false;
+      TTP_Bits[i]       = 0;
+      TPGa_data_Bits[i] = 0;
+    }
+    for(int i=0; i<16; i++)
+      for(int j=0; j<12; j++)
+        sector_muon_trigger[i][j] = false;
+  }
+  void print() const {
+    std::cout << "sample# " << sample << std::endl;
+    std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa" << std::endl;
+    for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
+      std::cout << tpg << "   " 
+                << octantsMuon[tpg]    << "  " 
+                << octantsHADveto[tpg] << "  "  // Hadron veto
+                << octantsA[tpg]       << "  "     // summ
+                << octantsEM[tpg]      << "  "     // EM
+                << "\t" 
+                << TTP_Bits[tpg]       << "  " 
+                << TPGa_data_Bits[tpg] << std::endl;
+    }
+  }
+  void detail_print() const {
+    std::cout << "sample# " << sample << std::endl;
+    std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa\tch>Noise" << std::endl;
+    for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
+      std::cout << tpg << "   " 
+                << octantsMuon[tpg]    << "  " 
+                << octantsHADveto[tpg] << "  "  // Hadron veto
+                << octantsA[tpg]       << "  "     // summ
+                << octantsEM[tpg]      << "  "     // EM
+                << "\t" 
+                << TTP_Bits[tpg]       << "   " 
+                << TPGa_data_Bits[tpg] << "   "
+                << "\t";
+      for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2][i] << " ";
+      std::cout << std::endl;
+      std::cout << "                \t        \t";
+      for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2+1][i] << " ";
+      std::cout << std::endl;
+    }
+  }
+};
+
 class CastorTTPTest : public edm::EDAnalyzer {
    public:
-      //-- trigger helper struct
-      struct MyCastorTrig {
-        short int sample;               /**< Time sample; 0 corresponds to the triggering sample */ 
-        //  std::vector<bool> ttpInput;     /**< ttp Inputs; more infor from Alan Camplell */ 
-        bool octantsA[8];               /**< octant-wise trigger info for threshold A */ 
-        bool octantsEM[8];              /**< octant-wise EM trigger  */ 
-        bool octantsHADveto[8];         /**< octant-wise veto on HAD */ 
-        bool octantsMuon[8];            /**< octant-wise muon trigger */
-        unsigned int TTP_Bits[8];       /*** Hauke: TTP trigger word I guess ***/
-        // TPGa_data_Bits only usefull for sample -2 to 1
-        unsigned int TPGa_data_Bits[8]; /*** Hauke: HTR trigger word I guess ***/
-
-        bool sector_muon_trigger[16][12]; /*** Hauke: channel above threshold for muon ***/
-
-        void clear() {
-          sample = 0;
-          for(int i=0; i<8; i++) {
-            octantsA[i]       = false;
-            octantsEM[i]      = false;
-            octantsHADveto[i] = false;
-            octantsMuon[i]    = false;
-            TTP_Bits[i]       = 0;
-            TPGa_data_Bits[i] = 0;
-          }
-          for(int i=0; i<16; i++)
-            for(int j=0; j<12; j++)
-              sector_muon_trigger[i][j] = false;
-        }
-
-        void print() const {
-          std::cout << "sample# " << sample << std::endl;
-          std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa" << std::endl;
-          for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
-            std::cout << tpg << "   " 
-                      << octantsMuon[tpg]    << "  " 
-                      << octantsHADveto[tpg] << "  "  // Hadron veto
-                      << octantsA[tpg]       << "  "     // summ
-                      << octantsEM[tpg]      << "  "     // EM
-                      << "\t" 
-                      << TTP_Bits[tpg]       << "  " 
-                      << TPGa_data_Bits[tpg] << std::endl;
-          }
-        }
-
-        void detail_print() const {
-          std::cout << "sample# " << sample << std::endl;
-          std::cout << "tpg M  Hv A  EM " << "\t" << "TTP TPGa\tch>Noise" << std::endl;
-          for ( int tpg = 0; tpg < 8 ; tpg+=1 ) {
-            std::cout << tpg << "   " 
-                      << octantsMuon[tpg]    << "  " 
-                      << octantsHADveto[tpg] << "  "  // Hadron veto
-                      << octantsA[tpg]       << "  "     // summ
-                      << octantsEM[tpg]      << "  "     // EM
-                      << "\t" 
-                      << TTP_Bits[tpg]       << "   " 
-                      << TPGa_data_Bits[tpg] << "   "
-                      << "\t";
-            for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2][i] << " ";
-            std::cout << std::endl;
-            std::cout << "                \t        \t";
-            for(int i=0; i<12; i++) std::cout << sector_muon_trigger[tpg*2+1][i] << " ";
-            std::cout << std::endl;
-          }
-        }
-
-      };
 
 
       explicit CastorTTPTest(const edm::ParameterSet&);
@@ -174,14 +171,14 @@ class CastorTTPTest : public edm::EDAnalyzer {
       void GetParameterSet(const edm::ParameterSet& iConfig);
       bool GetCollections(const edm::Event& iEvent);
 
-      CastorTTPTest::MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&, const int&);
-      unsigned long int CreateTTPBitWord(const CastorTTPTest::MyCastorTrig&, const int&);
+      MyCastorTrig GetTTPperTSshift(const HcalTTPDigi&, const int&, const int&, const int&);
+      unsigned long int CreateTTPBitWord(const MyCastorTrig&, const int&);
       void SetTPGaBits(unsigned int*, const int&, const int&);
 
       // create only muon and octantA trigger correctly NOT the other ones
-      CastorTTPTest::MyCastorTrig GetTTPperTSshiftFromDigis(const int&, const int&);
+      MyCastorTrig GetTTPperTSshiftFromDigis(const int&, const int&);
 
-      bool IsCastorMuon(const CastorTTPTest::MyCastorTrig&);
+      bool IsCastorMuon(const MyCastorTrig&);
 
       void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
 
@@ -216,7 +213,7 @@ const unsigned int kNCastorDigiTimeSlices = 6;
 const unsigned int kNCastorSectors = 16;
 const unsigned int kNCastorModules = 14;
 const unsigned int kMuonThresholdTableAdc[16][12] = 
-    // module                               // sector
+   // module                                // sector
   {// 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,   //
     {11,10,14,11,12,11,10,19,11,30,11,10},  //  1
     {11,11,13,12,18,11,10,11,12,11,10,11},  //  2
@@ -306,7 +303,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   h1["hBxAllEvt"]->Fill(evtbx);
 
-  std::vector< CastorTTPTest::MyCastorTrig > castorTrigger; castorTrigger.clear();
+  std::vector< MyCastorTrig > castorTrigger; castorTrigger.clear();
   
   int ttp_offset     = 0; // ts of ttp data used wrt SOI
   int ts_tpg_offset  = 0; // ts of tpg used wrt SOI
@@ -316,8 +313,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // for(int tsshift = -2; tsshift < 6; tsshift++){
   // change from 6 to 2 because with a ts_digi_offset of 4 tsshift=2 means look at digi ts 6 which is already the last one
   for(int tsshift = -2; tsshift < 2; tsshift++){
-    const CastorTTPTest::MyCastorTrig trigger      = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
-    const CastorTTPTest::MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift+ts_digi_offset,ts_digi_offset);
+    const MyCastorTrig trigger      = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+    const MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift+ts_digi_offset,ts_digi_offset);
 
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
@@ -436,10 +433,10 @@ CastorTTPTest::GetCollections(const edm::Event& iEvent)
 }
 
 
-CastorTTPTest::MyCastorTrig 
+MyCastorTrig 
 CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const int& ttp_offset, const int& ts_tpg_offset)
 {
-  CastorTTPTest::MyCastorTrig trigger;
+  MyCastorTrig trigger;
   trigger.clear();
 
   std::vector<bool> ttpInput = t.inputPattern(ttp_offset+tsshift); // at ts = ttp_offset from nominal zero ttp_offset
@@ -471,7 +468,7 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
 
 
 unsigned long int
-CastorTTPTest::CreateTTPBitWord(const CastorTTPTest::MyCastorTrig& trigger, const int& tpg)
+CastorTTPTest::CreateTTPBitWord(const MyCastorTrig& trigger, const int& tpg)
 {
   std::bitset<4> Bits;
 
@@ -506,10 +503,10 @@ CastorTTPTest::SetTPGaBits(unsigned int* TPGa_data_Bits, const int& tsshift, con
 
 
 // create only muon and octantA trigger correctly NOT the other ones
-CastorTTPTest::MyCastorTrig
+MyCastorTrig
 CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
 {
-  CastorTTPTest::MyCastorTrig trigger;
+  MyCastorTrig trigger;
   trigger.clear();
 
   unsigned int digi_adc_sector_module[kNCastorSectors][kNCastorModules];
@@ -559,7 +556,7 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& ts, const int& ts_offset)
 }
 
 bool
-CastorTTPTest::IsCastorMuon(const CastorTTPTest::MyCastorTrig& trigger)
+CastorTTPTest::IsCastorMuon(const MyCastorTrig& trigger)
 {
   int noct_muon = 0;
   int noct_tot  = 0;
