@@ -216,22 +216,25 @@ const unsigned int kNCastorDigiTimeSlices = 6;
 const unsigned int kNCastorSectors = 16;
 const unsigned int kNCastorModules = 14;
 const unsigned int kMuonThresholdTableAdc[16][12] = 
-  {{11,10,14,11,12,11,10,19,11,30,11,10},
-   {11,11,13,12,18,11,10,11,12,11,10,11},
-   {14,11,11,11,11,13,23,11,11,10,10,11},
-   {14,10,12,21,10,10,10,11,11,10,11,11},
-   {12,14,10,11,10,19,11,12,12,10,10,11},
-   {10,11,11,11,14,10,11,11,11,10,11,11},
-   {10,11,11,11,12,11,18,10,11,11,11,10},
-   {11,10,10,11,11,11,11,11,12,11,10,10},
-   {10,11,11,11,11,14,11,11,18,10,11,11},
-   {11,11,10,10,10,11,11,11,10,10,23,11},
-   {11,10,10,10,10,13,10,10,10,11,10,12},
-   {10,11,10,10,10,12,11,11,10,11,11,10},
-   {11,13,12,13,12,11,11,10,10,10,20,11},
-   {11,10,11,10,26,10,11,12,10,10,11,11},
-   {12,11,11,10,11,12,10,11,10,15,11,10},
-   {11,11,10,11,10,10,11,11,11,12,10,10}};
+    // module                               // sector
+  {// 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,   //
+    {11,10,14,11,12,11,10,19,11,30,11,10},  //  1
+    {11,11,13,12,18,11,10,11,12,11,10,11},  //  2
+    {14,11,11,11,11,13,23,11,11,10,10,11},  //  3
+    {14,10,12,21,10,10,10,11,11,10,11,11},  //  4
+    {12,14,10,11,10,19,11,12,12,10,10,11},  //  5
+    {10,11,11,11,14,10,11,11,11,10,11,11},  //  6
+    {10,11,11,11,12,11,18,10,11,11,11,10},  //  7
+    {11,10,10,11,11,11,11,11,12,11,10,10},  //  8
+    {10,11,11,11,11,14,11,11,18,10,11,11},  //  9
+    {11,11,10,10,10,11,11,11,10,10,23,11},  // 10
+    {11,10,10,10,10,13,10,10,10,11,10,12},  // 11
+    {10,11,10,10,10,12,11,11,10,11,11,10},  // 12
+    {11,13,12,13,12,11,11,10,10,10,20,11},  // 13
+    {11,10,11,10,26,10,11,12,10,10,11,11},  // 14
+    {12,11,11,10,11,12,10,11,10,15,11,10},  // 15
+    {11,11,10,11,10,10,11,11,11,12,10,10}   // 16
+  };
 
 //
 // static data member definitions
@@ -297,8 +300,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   // if( debugInfo ) std::cout << "NEW EVENT" << std::endl;
 
-  int evtnbr = iEvent.id().event();
-  int evtbx  = iEvent.bunchCrossing();
+  int evtnbr  = iEvent.id().event();
+  int evtbx   = iEvent.bunchCrossing();
+  int evtlumi = iEvent.luminosityBlock();
 
   h1["hBxAllEvt"]->Fill(evtbx);
 
@@ -357,13 +361,15 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
       if(htr_ttp_diff_print) {
-        std::cout << "*** TTP Input != HTR output with tsshift:" << tsshift << std::endl;
+        std::cout << "*** In Event:" << evtnbr << " Lumi:" << evtlumi
+                  << " => TTP Input != HTR output with tsshift:" << tsshift << std::endl;
         trigger.print();
       }
     }
 
     if( muon_trig_print && debugInfo ) {
-      std::cout << "*** Muon Triggered on at least one Octant:" << std::endl;
+      std::cout << "*** In Event:" << evtnbr << " Lumi:" << evtlumi
+                << " => Muon Triggered on at least one Octant:" << std::endl;
       trigger.print();
       std::cout << "    from own digi reco:" << std::endl;
       digi_trigger.detail_print();
@@ -373,8 +379,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       h1["hRelBxGlCasMu"]->Fill(tsshift);
       h1["hBxGlCasMu"]->Fill(evtbx+tsshift);
 
-      std::cout << "**(TTP)** In Event:" << evtnbr 
-                << " Castor Muon should trigger with tsshift:" << trigger.sample 
+      std::cout << "**(TTP)** In Event:" << evtnbr << " Lumi:" << evtlumi
+                << " => Castor Muon should trigger with tsshift:" << trigger.sample 
                 << std::endl;
       trigger.print();
     }

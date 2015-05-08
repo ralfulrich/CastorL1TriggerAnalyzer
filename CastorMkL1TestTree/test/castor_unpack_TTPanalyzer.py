@@ -66,7 +66,7 @@ process.source = cms.Source("PoolSource",
 # )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1000) #10000
+    input = cms.untracked.int32(200) #10000
 )
 
 process.castorDigis = cms.EDProducer("CastorRawToDigi",
