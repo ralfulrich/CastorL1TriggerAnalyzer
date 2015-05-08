@@ -617,21 +617,21 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
     }
-    if( decision && debugInfo ) //&& (algoBitNumber>=60 && algoBitNumber<=63) ) 
+    if( decision && debugInfo && (algoBitNumber>=60 && algoBitNumber<=63) ) 
       std::cout << "**(L1)** " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
 
   for (CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
-    bool decision            = m_l1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
+    // bool decision            = m_l1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
 
 
     if( show_trigger_menu ) {
       L1Algo_Menu[algoBitNumber] = algName;
     }
-    if( decision && debugInfo && (algoBitNumber>=60 && algoBitNumber<=63) ) 
-      std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
+    // if( decision && debugInfo && (algoBitNumber>=60 && algoBitNumber<=63) ) 
+    //   std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
 
 
