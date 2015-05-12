@@ -330,7 +330,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // change from 6 to 2 because with a ts_digi_offset of 4 tsshift=2 means look at digi ts 6 which is already the last one
   for(int tsshift = -2; tsshift < 2; tsshift++){
     const MyCastorTrig trigger      = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
-    const MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift,ts_digi_offset);
+    MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift,ts_digi_offset);
 
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
@@ -340,7 +340,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       char buf[128];
 
-      if( trigger.octantsMuon[ioct] || digi_trigger.octantsMuon[ioct] ) muon_trig_print = true;
+      if( trigger.octantsMuon[ioct] /*|| digi_trigger.octantsMuon[ioct]*/ ) muon_trig_print = true;
 
       if( trigger.octantsMuon[ioct] ) {
         sprintf(buf,"hBxMuOct_%d",ioct);
@@ -525,6 +525,7 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& tsshift, const int& ts_offse
   trigger.clear();
 
   int ts = tsshift + ts_offset;
+  if( ts < 0 || ts > 5 ) return trigger;
 
   unsigned int digi_adc_sector_module[kNCastorSectors][kNCastorModules];
 
