@@ -1,13 +1,5 @@
 import FWCore.ParameterSet.Config as cms
 
-#run_path = '/store/group/phys_heavyions/katkov/cas_loc_2013/'
-#run_number = 229479
-
-run_number = 242871
-#241423
-#239821
-#239754
-
 import os
 base_path = os.getenv('CMSSW_BASE', 'empty_defualt_value')
 print 'CMSSW_BASE: {0}'.format(base_path) 
@@ -16,12 +8,19 @@ process = cms.Process("PEDS")
 process.load("CondCore.DBCommon.CondDBSetup_cfi")
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 process.load('Configuration.StandardSequences.MagneticField_38T_cff')
-process.load('Configuration.StandardSequences.RawToDigi_cff')
+# process.load('Configuration.StandardSequences.RawToDigi_cff')
 process.load('Configuration.StandardSequences.L1Reco_cff')
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-        '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/854/00000/645B0043-8FF5-E411-BCBE-02163E01355D.root',
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/244/259/00000/065D1CC2-29F9-E411-BACB-02163E012A7A.root',
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/244/245/00000/1A93B236-E9F8-E411-A8D2-02163E0137B0.root',
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/244/244/00000/000C0A27-E8F8-E411-85CD-02163E0144F1.root',
+
+        # famous run with castor muon trigger
+        '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/864/00000/2A232EE6-94F5-E411-B649-02163E0118AF.root',
+
+        # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/854/00000/645B0043-8FF5-E411-BCBE-02163E01355D.root',
         # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/847/00000/46B6AB23-85F5-E411-B567-02163E0123BB.root',
         # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/786/00000/628A9296-22F5-E411-82C5-02163E012904.root',
 
@@ -88,79 +87,42 @@ process.source = cms.Source("PoolSource",
 # )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(1000) #10000
+    input = cms.untracked.int32(10) #10000
 )
 
+# This version is intended for unpacking standard production data
 process.castorDigis = cms.EDProducer("CastorRawToDigi",
-   CastorFirstFED = cms.int32(690),
-   FilterDataQuality = cms.bool(True),
-   ExceptionEmptyData = cms.untracked.bool(True),
-   InputLabel = cms.InputTag("rawDataCollector"),
-   # InputLabel = cms.InputTag("source"),
-   #UnpackCalib = cms.untracked.bool(False),
-   # castor technical trigger processor
-   UnpackTTP = cms.bool(True),
-   FEDs = cms.untracked.vint32(690,691,692),
-   lastSample = cms.int32(9),
-   firstSample = cms.int32(0),
-   CastorCtdc = cms.bool(False),
-   UseNominalOrbitMessageTime = cms.bool(True),
-   ExpectedOrbitMessageTime = cms.int32(-1)#,
-   # Do not complain about missing FEDs
-   #ComplainEmptyData = cms.untracked.bool(False),
+    # Optional filter to remove any digi with "data valid" off, "error" on, 
+    # or capids not rotating
+    FilterDataQuality = cms.bool(True),
+    # Number of the first CASTOR FED.  If this is not specified, the
+    # default from FEDNumbering is used.
+    CastorFirstFED = cms.int32(690),
+    # FED numbers to unpack.  If this is not specified, all FEDs from
+    # FEDNumbering will be unpacked.
+    FEDs = cms.untracked.vint32( 690, 691, 692 ),
+    # Do not complain about missing FEDs
+    ExceptionEmptyData = cms.untracked.bool(False),
+    # Do not complain about missing FEDs
+    ComplainEmptyData = cms.untracked.bool(False),
+    # At most ten samples can be put into a digi, if there are more
+    # than ten, firstSample and lastSample select which samples
+    # will be copied to the digi
+    firstSample = cms.int32(0),
+    lastSample = cms.int32(9),
+    # castor technical trigger processor
+    UnpackTTP = cms.bool(True),
+    # report errors
+    silent = cms.untracked.bool(False),
+    #
+    InputLabel = cms.InputTag("rawDataCollector"),
+    # InputLabel = cms.InputTag("source"),
+    CastorCtdc = cms.bool(False),
+    UseNominalOrbitMessageTime = cms.bool(True),
+    ExpectedOrbitMessageTime = cms.int32(-1)
 )
 
-process.dumpRaw = cms.EDAnalyzer( "DumpFEDRawDataProduct",
 
-   #feds = cms.untracked.vint32( 690,691,692,693 ),
-                              feds = cms.untracked.vint32(
-                                  23, #BPIX
-                                  32, #FPIX
-                                  628, #EB+
-                                  610, #EB-
-                                  557, #ES+
-                                  546, #ES-
-                                  149, #TIBTID
-                                  220, #TEC-
-                                                          300, #TEC+
-                                                          474, #TOB
-                                                          690,691,692,693, #CASTOR-ZDC
-                                                          700,#701,702,703,704,705, # HBHEa
-                                                          706,#707,708,709,710,711, # HBHEb
-                                                          712,#713,714,715,716,717, # HBHEc
-                                                          718,  # HF
-                                                          1118, #HF uTCA
-                                                          724,#725,726,727,         # HO
-                                                          #728,729,730,731,         # HO
-                                                          735,                     # SCAL
-                                                          770,#771,     # DT-
-                                                          772,          # DT0
-                                                          773,#774,     # DT+
-                                                          790, #RPC
-                                                          812,#813,745,             # TRG
-                                                          841,#831,832,833,834,     # CSC+
-                                                          #835,836,837,838,         # CSC+
-                                                          #840,841,842,843,844,     # CSC+
-                                                          #845,846,847,848,         # CSC+
-                                                          851,#851,852,853,854,     # CSC-
-                                                          #855,856,857,858,         # CSC-
-                                                          #860,861,862,863,864,     # CSC-
-                                                          #865,866,867,868,         # CSC-
-                                                          760,      # CSCTF
-                                                          1024                     # TCDS
-                                                          ),
-   #dumpPayload = cms.untracked.bool( True ),
-   label = cms.untracked.string('rawDataCollector')
-)
-
-process.m = cms.EDAnalyzer("HcalDigiDump")
-
-process.dump = cms.EDAnalyzer('HcalTBObjectDump',
-                              hcalTBTriggerDataTag = cms.InputTag('tbunpack'),
-                              hcalTBRunDataTag = cms.InputTag('tbunpack'),
-                              hcalTBEventPositionTag = cms.InputTag('tbunpack'),
-                              hcalTBTimingTag = cms.InputTag('tbunpack')
-)
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
 process.GlobalTag.globaltag = 'GR_P_V49::All'
