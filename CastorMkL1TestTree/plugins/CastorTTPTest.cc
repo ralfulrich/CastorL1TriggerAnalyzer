@@ -97,7 +97,7 @@ public:
   unsigned int TTP_Bits[8];                  /*** Hauke: TTP trigger word I guess ***/
   // TPGa_data_Bits only usefull for sample -2 to 1
   unsigned int TPGa_data_Bits[8];            /*** Hauke: HTR trigger word I guess ***/
-  bool channel_above_muon_threshold[16][12]; /*** Hauke: channel above threshold for muon trigger ***/
+  unsigned int channel_above_muon_threshold[16][12]; /*** Hauke: channel above threshold for muon trigger ***/
 
   void clear() {
     sample = 0;
@@ -111,7 +111,7 @@ public:
     }
     for(int i=0; i<16; i++)
       for(int j=0; j<12; j++)
-        channel_above_muon_threshold[i][j] = false;
+        channel_above_muon_threshold[i][j] = 0;
   }
   void print() const {
     std::cout << "sample# " << sample << std::endl;
@@ -204,6 +204,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
       bool show_trigger_menu;
       std::map<int,std::string> L1TT_Menu;
       std::map<int,std::string> L1Algo_Menu;
+      unsigned int Nevents;
 
       // --------- input labels for collections ----------
 
@@ -262,6 +263,8 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   //now do what ever initialization is needed
   GetParameterSet(iConfig);
 
+  Nevents = 0;
+
   // myTree = fs->make<TTree>("myTree","myTree");
 
   int nBxBins = 4000;
@@ -284,8 +287,19 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
     sprintf(buf,"hBxTotEOct_%d",ioct);
     h1[buf] = fs->make<TH1D>(buf,"",nBxBins,minBx,maxBx);
   }
-
   h1["hOctATrig"] = fs->make<TH1D>("hOctATrig","",8,0,8);
+
+  char buf2[128];
+  for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
+    for(unsigned int imod=0; imod<kNCastorModules; imod++) {
+      sprintf(buf2,"hADC_sec%d_mod%d",isec,imod);
+      h1[buf2] = fs->make<TH1D>(buf2,"",128,-0.5,127.5);
+    }
+
+    sprintf(buf2,"hMeanADC_sec%d",isec);
+    h1[buf2] = fs->make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
+    h1[buf2]->Sumw2();
+  }
 }
 
 
@@ -316,8 +330,27 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int evtnbr  = iEvent.id().event();
   int evtbx   = iEvent.bunchCrossing();
   int evtlumi = iEvent.luminosityBlock();
+  Nevents++;
 
   h1["hBxAllEvt"]->Fill(evtbx);
+
+  for(int its=0; its<6; its++) {
+    CastorDigiCollection::const_iterator const_iterator_digi;
+    for(const_iterator_digi = digicoll->begin(); const_iterator_digi != digicoll->end(); const_iterator_digi++) {
+      const CastorDataFrame& digi = *const_iterator_digi;
+          
+      int digi_sector = digi.id().sector() - 1;
+      int digi_module = digi.id().module() - 1;
+        
+      char buf2[128];
+      sprintf(buf2,"hADC_sec%d_mod%d",digi_sector,digi_module);
+      h1[buf2]->Fill( digi[its].adc() );
+
+      sprintf(buf2,"hMeanADC_sec%d",digi_sector);
+      h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );
+    }
+  }
+
 
   std::vector< MyCastorTrig > castorTrigger; castorTrigger.clear();
   
@@ -329,8 +362,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // for(int tsshift = -2; tsshift < 6; tsshift++){
   // change from 6 to 2 because with a ts_digi_offset of 4 tsshift=2 means look at digi ts 6 which is already the last one
   for(int tsshift = -2; tsshift < 2; tsshift++){
-    const MyCastorTrig trigger      = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
-    MyCastorTrig digi_trigger = GetTTPperTSshiftFromDigis(tsshift,ts_digi_offset);
+    const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+    MyCastorTrig digi_trigger  = GetTTPperTSshiftFromDigis(tsshift,ts_digi_offset);
 
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
@@ -340,7 +373,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
       char buf[128];
 
-      if( trigger.octantsMuon[ioct] /*|| digi_trigger.octantsMuon[ioct]*/ ) muon_trig_print = true;
+      if( trigger.octantsMuon[ioct] || digi_trigger.octantsMuon[ioct] ) muon_trig_print = true;
 
       if( trigger.octantsMuon[ioct] ) {
         sprintf(buf,"hBxMuOct_%d",ioct);
@@ -380,6 +413,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     }
 
+    // UNUSED(muon_trig_print);
     if( muon_trig_print && debugInfo ) {
       std::cout << "*** In Event:" << evtnbr << " Lumi:" << evtlumi
                 << " => Muon Triggered on at least one Octant:" << std::endl;
@@ -433,6 +467,11 @@ CastorTTPTest::GetCollections(const edm::Event& iEvent)
   
   if( !digicoll.isValid() || digicoll.failedToGet() ) {
     edm::LogWarning(" CastorDigiCollection ") << " Cannot read CastorDigiCollection " << std::endl;
+    return false;
+  }
+
+  if( digicoll->size() != 224 ) {
+    edm::LogWarning(" CastorDigiCollection ") << " CastorDigiCollection has NOT 224 size " << std::endl;
     return false;
   }
 
@@ -556,8 +595,8 @@ CastorTTPTest::GetTTPperTSshiftFromDigis(const int& tsshift, const int& ts_offse
     unsigned int NTowersAboveNoise = 0;
 
     for(unsigned int imod=0; imod<trigger_modules; imod++) {
-      if( digi_adc_sector_module[isec][imod] >= kMuonThresholdTableAdc[isec][imod] ) {
-        trigger.channel_above_muon_threshold[isec][imod] = true;
+      trigger.channel_above_muon_threshold[isec][imod] = digi_adc_sector_module[isec][imod];
+      if( digi_adc_sector_module[isec][imod] > kMuonThresholdTableAdc[isec][imod] ) {
         NChannelsAboveNoisePerTower[imod/3]++;
         NChannelsAboveNoise++;
       }
@@ -658,6 +697,11 @@ CastorTTPTest::beginJob()
 void 
 CastorTTPTest::endJob() 
 {
+  char buf2[128];
+  for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
+    sprintf(buf2,"hMeanADC_sec%d",isec);
+    h1[buf2]->Scale(1./(double)Nevents);
+  }
 }
 
 // ------------ method called when starting to processes a run  ------------

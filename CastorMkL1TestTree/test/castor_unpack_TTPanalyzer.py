@@ -13,12 +13,18 @@ process.load('Configuration.StandardSequences.L1Reco_cff')
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
+        '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/244/734/00000/08842CE7-FEFC-E411-847B-02163E014548.root',
+
+        # '/store/data/Commissioning2015/TestEnablesEcalHcal/RAW/v1/000/244/456/00000/1831154B-34FA-E411-9D4D-02163E0122E1.root',
+
         # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/244/259/00000/065D1CC2-29F9-E411-BACB-02163E012A7A.root',
         # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/244/245/00000/1A93B236-E9F8-E411-A8D2-02163E0137B0.root',
         # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/244/244/00000/000C0A27-E8F8-E411-85CD-02163E0144F1.root',
 
+        # '/store/data/Commissioning2015/Cosmics/RAW/v1/000/243/902/00000/8EBB8E97-08F6-E411-8411-02163E0135AD.root',
+
         # famous run with castor muon trigger
-        '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/864/00000/2A232EE6-94F5-E411-B649-02163E0118AF.root',
+        # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/864/00000/2A232EE6-94F5-E411-B649-02163E0118AF.root',
 
         # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/854/00000/645B0043-8FF5-E411-BCBE-02163E01355D.root',
         # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/243/847/00000/46B6AB23-85F5-E411-B567-02163E0123BB.root',
@@ -87,7 +93,7 @@ process.source = cms.Source("PoolSource",
 # )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(10) #10000
+    input = cms.untracked.int32(-10) #10000
 )
 
 # This version is intended for unpacking standard production data
@@ -116,6 +122,7 @@ process.castorDigis = cms.EDProducer("CastorRawToDigi",
     silent = cms.untracked.bool(False),
     #
     InputLabel = cms.InputTag("rawDataCollector"),
+    # InputLabel = cms.InputTag("hltEcalCalibrationRaw"),
     # InputLabel = cms.InputTag("source"),
     CastorCtdc = cms.bool(False),
     UseNominalOrbitMessageTime = cms.bool(True),
