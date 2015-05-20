@@ -334,22 +334,24 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   h1["hBxAllEvt"]->Fill(evtbx);
 
-  for(int its=0; its<6; its++) {
-    CastorDigiCollection::const_iterator const_iterator_digi;
-    for(const_iterator_digi = digicoll->begin(); const_iterator_digi != digicoll->end(); const_iterator_digi++) {
-      const CastorDataFrame& digi = *const_iterator_digi;
-          
-      int digi_sector = digi.id().sector() - 1;
-      int digi_module = digi.id().module() - 1;
+  
+  CastorDigiCollection::const_iterator const_iterator_digi;
+  for(const_iterator_digi = digicoll->begin(); const_iterator_digi != digicoll->end(); const_iterator_digi++) {
+    const CastorDataFrame& digi = *const_iterator_digi;
         
+    int digi_sector = digi.id().sector() - 1;
+    int digi_module = digi.id().module() - 1;
+    
+    for(int its=0; its<6; its++) {      
       char buf2[128];
       sprintf(buf2,"hADC_sec%d_mod%d",digi_sector,digi_module);
       h1[buf2]->Fill( digi[its].adc() );
-
+      
       sprintf(buf2,"hMeanADC_sec%d",digi_sector);
       h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );
     }
   }
+  
 
 
   std::vector< MyCastorTrig > castorTrigger; castorTrigger.clear();
@@ -427,10 +429,12 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       h1["hRelBxGlCasMu"]->Fill(tsshift);
       h1["hBxGlCasMu"]->Fill(evtbx+tsshift);
 
-      std::cout << "**(TTP)** In Event:" << evtnbr << " Lumi:" << evtlumi
-                << " => Castor Muon should trigger with tsshift:" << trigger.sample 
-                << std::endl;
-      trigger.print();
+      if( debugInfo ) {
+        std::cout << "**(TTP)** In Event:" << evtnbr << " Lumi:" << evtlumi
+                  << " => Castor Muon should trigger with tsshift:" << trigger.sample 
+                  << std::endl;
+        trigger.print();
+      }
     }
 
     // if(CastorDigiAndTrigDebug) trigger.Print();
