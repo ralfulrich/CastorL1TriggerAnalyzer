@@ -94,6 +94,7 @@ public:
   bool octantsEM[8];                         /**< octant-wise EM trigger  */ 
   bool octantsHADveto[8];                    /**< octant-wise veto on HAD */ 
   bool octantsMuon[8];                       /**< octant-wise muon trigger */
+  bool TTPout[8];                            /*** Hauke: output decision of the TTP saved in the first 4 ***/
   unsigned int TTP_Bits[8];                  /*** Hauke: TTP trigger word I guess ***/
   // TPGa_data_Bits only usefull for sample -2 to 1
   unsigned int TPGa_data_Bits[8];            /*** Hauke: HTR trigger word I guess ***/
@@ -106,6 +107,7 @@ public:
       octantsEM[i]      = false;
       octantsHADveto[i] = false;
       octantsMuon[i]    = false;
+      TTPout[i]         = false;
       TTP_Bits[i]       = 0;
       TPGa_data_Bits[i] = 0;
     }
@@ -277,11 +279,12 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
   h1["hRelBxGlCasMu"] = fs->make<TH1D>("hRelBxGlCasMu","",10,-3.5,6.5);
 
-  h1["hBxMuOct"]   = fs->make<TH1D>("hBxMuOct","",nBxBins,minBx,maxBx);
-  h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
-  h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
-  h1["hBxGlCasMu"] = fs->make<TH1D>("hBxGlCasMu","",nBxBins,minBx,maxBx);
-  h1["hBxTTbitMu"] = fs->make<TH1D>("hBxTTbitMu","",nBxBins,minBx,maxBx);
+  h1["hBxMuOct"]     = fs->make<TH1D>("hBxMuOct","",nBxBins,minBx,maxBx);
+  h1["hBxTotEOct"]   = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
+  h1["hBxAllEvt"]    = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
+  h1["hBxGlCasMu"]   = fs->make<TH1D>("hBxGlCasMu","",nBxBins,minBx,maxBx);
+  h1["hBxTTPCasMu"]  = fs->make<TH1D>("hBxTTPCasMu","",nBxBins,minBx,maxBx);
+  h1["hBxL1TTCasMu"] = fs->make<TH1D>("hBxL1TTCasMu","",nBxBins,minBx,maxBx);
 
   h1["hL1TTMap"] = fs->make<TH1D>("hL1TTMap","",64,-0.5,63.5);
 
@@ -413,6 +416,14 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
     } // end for ioct
 
+    if( trigger.TTPout[3] && tsshift == 0 ) {
+      if( debugInfo ) {
+        std::cout << "**(TTP)** In Event:" << evtnbr << " Lumi:" << evtlumi
+                  << " => TTP Muon trigger with tsshift:" << trigger.sample << std::endl;
+      }
+      h1["hBxTTPCasMu"]->Fill(evtbx+tsshift);
+    }
+
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
       if(htr_ttp_diff_print) {
@@ -454,7 +465,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   for(unsigned int ibit=0; ibit<64; ibit++) h1["hL1TTMap"]->Fill(ibit,ttout[ibit]);
 
-  if( ttout[59] ) h1["hBxTTbitMu"]->Fill(evtbx);
+  if( ttout[59] ) h1["hBxL1TTCasMu"]->Fill(evtbx);
 }
 
 // ------------ methods to get detector collections --------------------------------------
@@ -515,6 +526,8 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
   MyCastorTrig trigger;
   trigger.clear();
 
+  trigger.sample = tsshift;
+
   std::vector<bool> ttpInput = t.inputPattern(ttp_offset+tsshift); // at ts = ttp_offset from nominal zero ttp_offset
   // sequence is Atop,Abot,Bbot,Btop,raptop,rapbot,muonbot,muontop                                    
   // htr 3t 3b 4t 4b 5t 5b 7t 7b map to tpg 0..7  
@@ -532,6 +545,16 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
     trigger.TTP_Bits[tpg]         = CreateTTPBitWord(trigger,tpg);
     trigger.TTP_Bits[tpg+1]       = CreateTTPBitWord(trigger,tpg+1);
   }
+
+   uint8_t  TTP_triggerOutput  = t.triggerOutput(ttp_offset+tsshift);
+   bool TTPout_EtTrigA = ( TTP_triggerOutput & 0x1) !=0;
+   bool TTPout_EtTrigB = ( TTP_triggerOutput & 0x2) !=0;
+   bool TTPout_RapTrig = ( TTP_triggerOutput & 0x4) !=0;
+   bool TTPout_MuonDetect = ( TTP_triggerOutput & 0x8) !=0;
+   trigger.TTPout[0] = TTPout_EtTrigA;
+   trigger.TTPout[1] = TTPout_EtTrigB;
+   trigger.TTPout[2] = TTPout_RapTrig;
+   trigger.TTPout[3] = TTPout_MuonDetect;
 
   if( tsshift >= -2 && tsshift <= 1 ) {
     SetTPGaBits(trigger.TPGa_data_Bits,tsshift,ts_tpg_offset);
