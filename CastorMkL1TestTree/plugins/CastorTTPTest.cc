@@ -214,6 +214,7 @@ class CastorTTPTest : public edm::EDAnalyzer {
       edm::Handle<CastorTrigPrimDigiCollection> castortpg; // HTR card output
       edm::Handle<HcalTTPDigiCollection>        castorttp; // TTP input
       edm::Handle<CastorDigiCollection>         digicoll;
+      edm::Handle<L1GlobalTriggerReadoutRecord> gtReadoutRecord;
 
       // --------- tree variables ------------------------
       // TTree* myTree;
@@ -280,8 +281,9 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
   h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
   h1["hBxGlCasMu"] = fs->make<TH1D>("hBxGlCasMu","",nBxBins,minBx,maxBx);
+  h1["hBxTTbitMu"] = fs->make<TH1D>("hBxTTbitMu","",nBxBins,minBx,maxBx);
 
-  h1["hL1TTMap"] = fs->make<TH1D>("hL1TTMap","",64,0,64);
+  h1["hL1TTMap"] = fs->make<TH1D>("hL1TTMap","",64,-0.5,63.5);
 
   char buf[128];
   for(int ioct=0; ioct<8; ioct++) {
@@ -451,6 +453,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   std::bitset<64> ttout = GetL1TTword(iEvent,iSetup);
 
   for(unsigned int ibit=0; ibit<64; ibit++) h1["hL1TTMap"]->Fill(ibit,ttout[ibit]);
+
+  if( ttout[59] ) h1["hBxTTbitMu"]->Fill(evtbx);
 }
 
 // ------------ methods to get detector collections --------------------------------------
@@ -494,6 +498,12 @@ CastorTTPTest::GetCollections(const edm::Event& iEvent)
     edm::LogWarning(" CastorTrigPrimDigiCollection ") << " Cannot read CastorTrigPrimDigiCollection " << std::endl;
     return false;
   }
+
+  iEvent.getByLabel(edm::InputTag("gtDigis"), gtReadoutRecord);
+  if( !gtReadoutRecord.isValid() || gtReadoutRecord.failedToGet() ) {
+    edm::LogWarning(" GTReadoutRecord ") << " Cannot read gtReadoutRecord " << std::endl;
+    return false;
+  };
 
   return true;
 }
@@ -702,26 +712,19 @@ CastorTTPTest::GetL1TTword(const edm::Event& iEvent, const edm::EventSetup& iSet
 
   int evtnbr = iEvent.id().event();
 
-  edm::Handle<L1GlobalTriggerReadoutRecord> gtReadoutRecord;
-  iEvent.getByLabel(edm::InputTag("gtDigis"), gtReadoutRecord);
-  if(!gtReadoutRecord.isValid()){
-    edm::LogWarning("CASTOR ") << "\t\t\t T R I G G E R  has no L1GlobalTriggerReadoutRecord";
-    return ttout;
-  };
-
   // technical trigger bits (64 bits) :  typedef std::vector<bool> TechnicalTriggerWord;
   TechnicalTriggerWord TechTrigg     = gtReadoutRecord->technicalTriggerWord();
-
   short unsigned int   TechTriggSize = (short unsigned int) TechTrigg.size();
+
   if(TechTriggSize<64){
-    edm::LogWarning("CASTOR ") << "\t\t\t T R I G G E R  has too small TT size = " << TechTriggSize;
+    edm::LogWarning(" GTReadoutRecord ") << " TriggerWord has too small TT size = " << TechTriggSize;
     return ttout;
   };
 
   for(unsigned int i=0; i<64; i++) ttout[i] = TechTrigg[i];
   
-  std::cout << "**(L1)** TechTrigWord = " << ttout << std::endl;
-  if( ttout[59] ) std::cout << "**(L1)** " << evtnbr << " CASTOR MUON BIT FIRED!!!" << std::endl;
+  // std::cout << "**(L1)** TechTrigWord = " << ttout << std::endl;
+  if( debugInfo && ttout[59] ) std::cout << "**(L1)** " << evtnbr << " CASTOR MUON BIT FIRED!!!" << std::endl;
 
   return ttout;
 }
