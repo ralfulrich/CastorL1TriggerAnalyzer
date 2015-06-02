@@ -196,7 +196,9 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
       bool IsCastorMuon(const MyCastorTrig&);
 
+      // is NOT WORKING with the express stream data
       void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
+      std::bitset<64> GetL1TTword(const edm::Event&, const edm::EventSetup&);
 
       // ----------member data ---------------------------
       bool debugInfo;
@@ -278,6 +280,8 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hBxTotEOct"] = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
   h1["hBxAllEvt"]  = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
   h1["hBxGlCasMu"] = fs->make<TH1D>("hBxGlCasMu","",nBxBins,minBx,maxBx);
+
+  h1["hL1TTMap"] = fs->make<TH1D>("hL1TTMap","",64,0,64);
 
   char buf[128];
   for(int ioct=0; ioct<8; ioct++) {
@@ -364,6 +368,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // for(int tsshift = -2; tsshift < 6; tsshift++){
   // change from 6 to 2 because with a ts_digi_offset of 4 tsshift=2 means look at digi ts 6 which is already the last one
   for(int tsshift = -2; tsshift < 2; tsshift++){
+  // for(int tsshift = 0; tsshift < 1; tsshift++){
     const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
     MyCastorTrig digi_trigger  = GetTTPperTSshiftFromDigis(tsshift,ts_digi_offset);
 
@@ -443,6 +448,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   } // loop over tsshift
 
   GetL1TTResults(iEvent,iSetup);
+  std::bitset<64> ttout = GetL1TTword(iEvent,iSetup);
+
+  for(unsigned int ibit=0; ibit<64; ibit++) h1["hL1TTMap"]->Fill(ibit,ttout[ibit]);
 }
 
 // ------------ methods to get detector collections --------------------------------------
@@ -501,9 +509,7 @@ CastorTTPTest::GetTTPperTSshift(const HcalTTPDigi& t, const int& tsshift, const 
   // sequence is Atop,Abot,Bbot,Btop,raptop,rapbot,muonbot,muontop                                    
   // htr 3t 3b 4t 4b 5t 5b 7t 7b map to tpg 0..7  
 
-  trigger.sample   = tsshift;
-  
-
+  // std::cout << t << std::endl;
   for ( int tpg = 0; tpg < 8 ; tpg+=2 ) {
     trigger.octantsA[tpg]         = ttpInput[0+(8*(tpg/2))];
     trigger.octantsA[tpg+1]       = ttpInput[1+(8*(tpg/2))];
@@ -652,7 +658,6 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
   const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
   const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
 
-
   for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
@@ -661,21 +666,20 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     if( show_trigger_menu ) {
       L1TT_Menu[algoBitNumber] = algName;
     }
-    if( decision && debugInfo && (algoBitNumber>=60 && algoBitNumber<=63) ) 
+    if( decision && debugInfo ) 
       std::cout << "**(L1)** " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
 
   for (CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
-    // bool decision            = m_l1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
-
+    bool decision            = m_l1GtUtils.decision(iEvent, itAlgo->first, iErrorCode);
 
     if( show_trigger_menu ) {
       L1Algo_Menu[algoBitNumber] = algName;
     }
-    // if( decision && debugInfo && (algoBitNumber>=60 && algoBitNumber<=63) ) 
-    //   std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
+    if( decision && debugInfo ) 
+      std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
   }
 
 
@@ -689,6 +693,37 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
 
     show_trigger_menu = false;
   }
+}
+
+std::bitset<64>
+CastorTTPTest::GetL1TTword(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+{
+  std::bitset<64> ttout = 0;
+
+  int evtnbr = iEvent.id().event();
+
+  edm::Handle<L1GlobalTriggerReadoutRecord> gtReadoutRecord;
+  iEvent.getByLabel(edm::InputTag("gtDigis"), gtReadoutRecord);
+  if(!gtReadoutRecord.isValid()){
+    edm::LogWarning("CASTOR ") << "\t\t\t T R I G G E R  has no L1GlobalTriggerReadoutRecord";
+    return ttout;
+  };
+
+  // technical trigger bits (64 bits) :  typedef std::vector<bool> TechnicalTriggerWord;
+  TechnicalTriggerWord TechTrigg     = gtReadoutRecord->technicalTriggerWord();
+
+  short unsigned int   TechTriggSize = (short unsigned int) TechTrigg.size();
+  if(TechTriggSize<64){
+    edm::LogWarning("CASTOR ") << "\t\t\t T R I G G E R  has too small TT size = " << TechTriggSize;
+    return ttout;
+  };
+
+  for(unsigned int i=0; i<64; i++) ttout[i] = TechTrigg[i];
+  
+  std::cout << "**(L1)** TechTrigWord = " << ttout << std::endl;
+  if( ttout[59] ) std::cout << "**(L1)** " << evtnbr << " CASTOR MUON BIT FIRED!!!" << std::endl;
+
+  return ttout;
 }
 
 // ------------ method called once each job just before starting event loop  ------------

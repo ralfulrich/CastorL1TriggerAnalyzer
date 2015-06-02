@@ -13,7 +13,29 @@ process.load('Configuration.StandardSequences.L1Reco_cff')
 
 process.source = cms.Source("PoolSource",
     fileNames = cms.untracked.vstring(
-        '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/244/734/00000/08842CE7-FEFC-E411-847B-02163E014548.root',
+        '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/246/599/00000/94FE5E48-FE08-E511-A048-02163E011911.root'
+
+        # '/store/express/Commissioning2015/ExpressPhysics/FEVT/Express-v1/000/246/310/00000/1832742A-C506-E511-B3B2-02163E0139D8.root',
+
+        # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/246/339/00000/D8016108-F706-E511-841F-02163E0119D0.root',
+
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/246/442/00000/081D8E53-4108-E511-A365-02163E011C9E.root',
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/246/442/00000/128AD7C0-4A08-E511-9DFC-02163E013780.root',
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/246/442/00000/1C432E0E-4308-E511-A2BF-02163E011BA1.root',
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/246/442/00000/1C7FD82C-4308-E511-B7B6-02163E014470.root',
+
+        # '/store/express/Commissioning2015/ExpressPhysics/FEVT/Express-v1/000/245/357/00000/44B81F5D-AE00-E511-A2F3-02163E012011.root',
+        # '/store/express/Commissioning2015/ExpressPhysics/FEVT/Express-v1/000/245/357/00000/7E8B1889-AE00-E511-8B1A-02163E0123BB.root',
+        # '/store/express/Commissioning2015/ExpressPhysics/FEVT/Express-v1/000/245/357/00000/B25344F0-B000-E511-B8EB-02163E012B0F.root',
+        # '/store/express/Commissioning2015/ExpressPhysics/FEVT/Express-v1/000/245/357/00000/D21A7BD2-B000-E511-8A81-02163E01219E.root',
+
+        # '/store/express/Commissioning2015/ExpressCosmics/FEVT/Express-v1/000/245/258/00000/7A0527F5-4F00-E511-B481-02163E0142D7.root',
+
+        # '/store/express/Commissioning2015/ExpressPhysics/FEVT/Express-v1/000/245/192/00000/12D20F51-8EFF-E411-AA4E-02163E012324.root',
+
+        # 'file:/tmp/katkov/HIRun2013A_PAMinBiasUPC_RAW_v1_000_210_983_A850DF19-7F69-E211-8DDE-001D09F2447F.root',
+
+        # '/store/data/Commissioning2015/MinimumBias/RAW/v1/000/244/734/00000/14A1F9EB-FEFC-E411-9214-02163E011DA1.root',
 
         # '/store/data/Commissioning2015/TestEnablesEcalHcal/RAW/v1/000/244/456/00000/1831154B-34FA-E411-9D4D-02163E0122E1.root',
 
@@ -93,7 +115,7 @@ process.source = cms.Source("PoolSource",
 # )
 
 process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-10) #10000
+    input = cms.untracked.int32(-100) #10000
 )
 
 # This version is intended for unpacking standard production data
@@ -132,14 +154,15 @@ process.castorDigis = cms.EDProducer("CastorRawToDigi",
 
 
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-process.GlobalTag.globaltag = 'GR_P_V49::All'
+# process.GlobalTag.globaltag = 'GR_P_V49::All'
+process.GlobalTag.globaltag = 'GR_E_V47::All'
 
 
 #################################################################################################################################
 #################################################################################################################################
 process.castorl1test = cms.EDAnalyzer('CastorTTPTest',
     debugInfo = cms.bool(True),
-    ShowTriggerMenu = cms.bool(False)
+    ShowTriggerMenu = cms.bool(True)
 )
 #################################################################################################################################
 
