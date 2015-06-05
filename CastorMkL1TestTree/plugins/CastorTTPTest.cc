@@ -80,6 +80,8 @@
 
 
 #define UNUSED(x) ((void)(x))
+#define NTECHTRIGBITS 64
+#define NALGOTRIGBITS 128
 
 //
 // class declaration
@@ -198,9 +200,12 @@ class CastorTTPTest : public edm::EDAnalyzer {
 
       bool IsCastorMuon(const MyCastorTrig&);
 
-      // is NOT WORKING with the express stream data
-      void GetL1TTResults(const edm::Event&, const edm::EventSetup&);
-      std::bitset<64> GetL1TTword(const edm::Event&, const edm::EventSetup&);
+      // maybe NOT WORKING with the express stream data
+      // seems to be a problem for RAW data at all // maybe some reco step is missing
+      void GetL1TTResults(const edm::Event&, const edm::EventSetup&, std::bitset<NALGOTRIGBITS>&);
+
+      std::bitset<NTECHTRIGBITS> GetL1TTword(const edm::Event&, const edm::EventSetup&);
+      std::bitset<NALGOTRIGBITS> GetL1Algoword(const edm::Event&, const edm::EventSetup&);
 
       // ----------member data ---------------------------
       bool debugInfo;
@@ -275,18 +280,35 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   int nBxBins = 4000;
   double minBx = 0, maxBx = 4000;
 
-  h1["hRelBxMuOct"]   = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
-  h1["hRelBxTotEOct"] = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
-  h1["hRelBxGlCasMu"] = fs->make<TH1D>("hRelBxGlCasMu","",10,-3.5,6.5);
+  h1["hTTPHTRcrash"] = fs->make<TH1D>("hTTPHTRcrash","",10,-3.5,6.5);
 
-  h1["hBxMuOct"]     = fs->make<TH1D>("hBxMuOct","",nBxBins,minBx,maxBx);
-  h1["hBxTotEOct"]   = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
-  h1["hBxAllEvt"]    = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
-  h1["hBxGlCasMu"]   = fs->make<TH1D>("hBxGlCasMu","",nBxBins,minBx,maxBx);
-  h1["hBxTTPCasMu"]  = fs->make<TH1D>("hBxTTPCasMu","",nBxBins,minBx,maxBx);
-  h1["hBxL1TTCasMu"] = fs->make<TH1D>("hBxL1TTCasMu","",nBxBins,minBx,maxBx);
+  h1["hEvtRunNbr"] = fs->make<TH1D>("hEvtRunNbr","",100,0,-1);
+  h1["hEvtLumi"] = fs->make<TH1D>("hEvtLumi","",1000,0,1000);
 
-  h1["hL1TTMap"] = fs->make<TH1D>("hL1TTMap","",64,-0.5,63.5);
+  h1["hRelBxMuOct"]    = fs->make<TH1D>("hRelBxMuOct","",10,-3.5,6.5);
+  h1["hRelBxTotEOct"]  = fs->make<TH1D>("hRelBxTotEOct","",10,-3.5,6.5);
+  h1["hRelBxGlCasMu"]  = fs->make<TH1D>("hRelBxGlCasMu","",10,-3.5,6.5);
+  h1["hRelBxTTPCasMu"] = fs->make<TH1D>("hRelBxTTPCasMu","",10,-3.5,6.5);
+
+  h1["hBxMuOct"]        = fs->make<TH1D>("hBxMuOct","",nBxBins,minBx,maxBx);
+  h1["hBxTotEOct"]      = fs->make<TH1D>("hBxTotEOct","",nBxBins,minBx,maxBx);
+  h1["hBxAllEvt"]       = fs->make<TH1D>("hBxAllEvt","",nBxBins,minBx,maxBx);
+  h1["hBxGlCasMu"]      = fs->make<TH1D>("hBxGlCasMu","",nBxBins,minBx,maxBx);
+  h1["hBxTTPCasMu"]     = fs->make<TH1D>("hBxTTPCasMu","",nBxBins,minBx,maxBx);
+  h1["hBxL1TTCasMu"]    = fs->make<TH1D>("hBxL1TTCasMu","",nBxBins,minBx,maxBx);
+  h1["hBxL1TTCasMu_v2"] = fs->make<TH1D>("hBxL1TTCasMu_v2","",nBxBins,minBx,maxBx);
+  h1["hBxL1AlgoCasMu"]  = fs->make<TH1D>("hBxL1AlgoCasMu","",nBxBins,minBx,maxBx);
+
+  h2["hBxL1TT"] = fs->make<TH2D>("hBxL1TT","",nBxBins,minBx,maxBx,NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5);
+  h2["hBxL1Algo"] = fs->make<TH2D>("hBxL1Algo","",nBxBins,minBx,maxBx,NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
+
+  h1["hL1TTMap"] = fs->make<TH1D>("hL1TTMap","",NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5);
+  h1["hL1AlgoMap"] = fs->make<TH1D>("hL1AlgoMap","",NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
+
+  h1["hTTPMuNTrigA"] = fs->make<TH1D>("hTTPMuNTrigA","",9,-0.5,8.5);
+
+  h1["hTsTTPCasMuWhileL1TTCasMu"]   = fs->make<TH1D>("hTsTTPCasMuWhileL1TTCasMu","",10,-3.5,6.5);
+  h1["hTsTTPCasMuWhileL1AlgoCasMu"] = fs->make<TH1D>("hTsTTPCasMuWhileL1AlgoCasMu","",10,-3.5,6.5);
 
   char buf[128];
   for(int ioct=0; ioct<8; ioct++) {
@@ -302,7 +324,7 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
     for(unsigned int imod=0; imod<kNCastorModules; imod++) {
       sprintf(buf2,"hADC_sec%d_mod%d",isec,imod);
-      h1[buf2] = fs->make<TH1D>(buf2,"",128,-0.5,127.5);
+      h1[buf2] = fs->make<TH1D>(buf2,"",NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
     }
 
     sprintf(buf2,"hMeanADC_sec%d",isec);
@@ -339,7 +361,14 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int evtnbr  = iEvent.id().event();
   int evtbx   = iEvent.bunchCrossing();
   int evtlumi = iEvent.luminosityBlock();
+  int evtrun  = iEvent.id().run();
+
+  // if( evtlumi <= 15 ) return;
+
   Nevents++;
+
+  h1["hEvtRunNbr"]->Fill(evtrun);
+  h1["hEvtLumi"]->Fill(evtlumi);
 
   h1["hBxAllEvt"]->Fill(evtbx);
 
@@ -377,6 +406,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
     MyCastorTrig digi_trigger  = GetTTPperTSshiftFromDigis(tsshift,ts_digi_offset);
 
+    int iOctTrigA = 0;
+
     bool fillmuocttrig = true;
     bool filltoteocttrig = true;
     bool htr_ttp_diff_print = false;
@@ -398,6 +429,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         }
       }
     
+      if( trigger.octantsA[ioct] ) iOctTrigA++;
+
       if( !trigger.octantsA[ioct] ) {
         sprintf(buf,"hBxTotEOct_%d",ioct);
         h1[buf]->Fill(evtbx+tsshift);
@@ -423,6 +456,10 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       }
       h1["hBxTTPCasMu"]->Fill(evtbx+tsshift);
     }
+    if( trigger.TTPout[3] ) {
+      h1["hRelBxTTPCasMu"]->Fill(tsshift);
+      h1["hTTPMuNTrigA"]->Fill(iOctTrigA);
+    }
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
@@ -430,6 +467,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         std::cout << "*** In Event:" << evtnbr << " Lumi:" << evtlumi
                   << " => TTP Input != HTR output with tsshift:" << tsshift << std::endl;
         trigger.print();
+        h1["hTTPHTRcrash"]->Fill(tsshift);
       }
     }
 
@@ -445,7 +483,6 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
     if( IsCastorMuon(trigger) ) {
       h1["hRelBxGlCasMu"]->Fill(tsshift);
-      h1["hBxGlCasMu"]->Fill(evtbx+tsshift);
 
       if( debugInfo ) {
         std::cout << "**(TTP)** In Event:" << evtnbr << " Lumi:" << evtlumi
@@ -453,6 +490,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                   << std::endl;
         trigger.print();
       }
+
+      if( tsshift == 0 ) h1["hBxGlCasMu"]->Fill(evtbx+tsshift);
     }
 
     // if(CastorDigiAndTrigDebug) trigger.Print();
@@ -460,12 +499,36 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       
   } // loop over tsshift
 
-  GetL1TTResults(iEvent,iSetup);
-  std::bitset<64> ttout = GetL1TTword(iEvent,iSetup);
+  // GetL1TTResults(iEvent,iSetup,AlgoTrigWord);
+  std::bitset<NTECHTRIGBITS> TechTrigWord = GetL1TTword(iEvent,iSetup);
+  std::bitset<NALGOTRIGBITS> AlgoTrigWord = GetL1Algoword(iEvent,iSetup);
 
-  for(unsigned int ibit=0; ibit<64; ibit++) h1["hL1TTMap"]->Fill(ibit,ttout[ibit]);
+  for(unsigned int ibit=0; ibit<NTECHTRIGBITS; ibit++) {
+    h1["hL1TTMap"]->Fill(ibit,TechTrigWord[ibit]);
+    h2["hBxL1TT"]->Fill(evtbx,ibit,TechTrigWord[ibit]);
+  }
+  for(unsigned int ibit=0; ibit<NALGOTRIGBITS; ibit++) {
+    h1["hL1AlgoMap"]->Fill(ibit,AlgoTrigWord[ibit]);
+    h2["hBxL1Algo"]->Fill(evtbx,ibit,AlgoTrigWord[ibit]);
+  }
 
-  if( ttout[59] ) h1["hBxL1TTCasMu"]->Fill(evtbx);
+  if( AlgoTrigWord[102] ) {
+    h1["hBxL1AlgoCasMu"]->Fill(evtbx);
+    for(int tsshift = -2; tsshift < 6; tsshift++) {
+      const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+      if( trigger.TTPout[3] ) h1["hTsTTPCasMuWhileL1AlgoCasMu"]->Fill(tsshift);
+      else h1["hTsTTPCasMuWhileL1AlgoCasMu"]->Fill(-1000);
+    }
+  }
+
+  if( TechTrigWord[59] ) {
+    h1["hBxL1TTCasMu"]->Fill(evtbx);
+    for(int tsshift = -2; tsshift < 6; tsshift++) {
+      const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+      if( trigger.TTPout[3] ) h1["hTsTTPCasMuWhileL1TTCasMu"]->Fill(tsshift);
+      else h1["hTsTTPCasMuWhileL1TTCasMu"]->Fill(-1000);
+    }
+  }
 }
 
 // ------------ methods to get detector collections --------------------------------------
@@ -673,9 +736,10 @@ CastorTTPTest::IsCastorMuon(const MyCastorTrig& trigger)
 }
 
 void 
-CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& iSetup, std::bitset<NALGOTRIGBITS>& AlgoTrigWord)
 {
   int evtnbr = iEvent.id().event();
+  int evtbx  = iEvent.bunchCrossing();
 
   bool useL1EventSetup = true;
   bool useL1GtTriggerMenuLite = true;
@@ -691,6 +755,7 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
   const AlgorithmMap&    algorithmMap        = m_l1GtMenu->gtAlgorithmMap();
   const AlgorithmMap&    technicalTriggerMap = m_l1GtMenu->gtTechnicalTriggerMap();
 
+  bool casmutrig = false;
   for (CItAlgo itAlgo = technicalTriggerMap.begin(); itAlgo != technicalTriggerMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
     int algoBitNumber        = ( itAlgo->second ).algoBitNumber();
@@ -701,7 +766,11 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     }
     if( decision && debugInfo ) 
       std::cout << "**(L1)** " << evtnbr << " => TechnicalTrigger Bit " << algoBitNumber << " triggered" << std::endl;
+
+    if( algoBitNumber == 59 ) casmutrig = decision;
   }
+  if( casmutrig ) h1["hBxL1TTCasMu_v2"]->Fill(evtbx);
+
 
   for (CItAlgo itAlgo = algorithmMap.begin(); itAlgo != algorithmMap.end(); itAlgo++) {
     std::string algName      = itAlgo->first;
@@ -713,6 +782,8 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
     }
     if( decision && debugInfo ) 
       std::cout << "**(L1)** " << evtnbr << " => AlgoTrigger Bit " << algoBitNumber << " triggered" << std::endl;
+
+    if( algoBitNumber < NALGOTRIGBITS ) AlgoTrigWord[algoBitNumber] = decision;
   }
 
 
@@ -728,10 +799,10 @@ CastorTTPTest::GetL1TTResults(const edm::Event& iEvent, const edm::EventSetup& i
   }
 }
 
-std::bitset<64>
+std::bitset<NTECHTRIGBITS>
 CastorTTPTest::GetL1TTword(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 {
-  std::bitset<64> ttout = 0;
+  std::bitset<NTECHTRIGBITS> ttout = 0;
 
   int evtnbr = iEvent.id().event();
 
@@ -739,17 +810,36 @@ CastorTTPTest::GetL1TTword(const edm::Event& iEvent, const edm::EventSetup& iSet
   TechnicalTriggerWord TechTrigg     = gtReadoutRecord->technicalTriggerWord();
   short unsigned int   TechTriggSize = (short unsigned int) TechTrigg.size();
 
-  if(TechTriggSize<64){
+  if(TechTriggSize<NTECHTRIGBITS){
     edm::LogWarning(" GTReadoutRecord ") << " TriggerWord has too small TT size = " << TechTriggSize;
     return ttout;
   };
 
-  for(unsigned int i=0; i<64; i++) ttout[i] = TechTrigg[i];
+  for(unsigned int i=0; i<NTECHTRIGBITS; i++) ttout[i] = TechTrigg[i];
   
   // std::cout << "**(L1)** TechTrigWord = " << ttout << std::endl;
   if( debugInfo && ttout[59] ) std::cout << "**(L1)** " << evtnbr << " CASTOR MUON BIT FIRED!!!" << std::endl;
 
   return ttout;
+}
+
+std::bitset<NALGOTRIGBITS> 
+CastorTTPTest::GetL1Algoword(const edm::Event& iEvent, const edm::EventSetup& iSetup)
+{
+  std::bitset<NALGOTRIGBITS> ttout = 0;
+
+  // technical trigger bits (64 bits) :  typedef std::vector<bool> TechnicalTriggerWord;
+  DecisionWord AlgoTrig           = gtReadoutRecord->decisionWord();
+  short unsigned int AlgoTriggSize = (short unsigned int) AlgoTrig.size();
+
+  if(AlgoTriggSize<NALGOTRIGBITS){
+    edm::LogWarning(" GTReadoutRecord ") << " DecisionWord has too small Algo size = " << AlgoTriggSize;
+    return ttout;
+  };
+
+  for(unsigned int i=0; i<NALGOTRIGBITS; i++) ttout[i] = AlgoTrig[i];
+
+  return ttout; 
 }
 
 // ------------ method called once each job just before starting event loop  ------------
