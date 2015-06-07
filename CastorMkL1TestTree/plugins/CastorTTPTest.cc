@@ -211,9 +211,12 @@ class CastorTTPTest : public edm::EDAnalyzer {
       bool debugInfo;
       L1GtUtils m_l1GtUtils;
       bool show_trigger_menu;
+      bool new_TTPinput_coding;
       std::map<int,std::string> L1TT_Menu;
       std::map<int,std::string> L1Algo_Menu;
       unsigned int Nevents;
+      unsigned int NeventsBx208;
+      unsigned int NeventsBx1993;
 
       // --------- input labels for collections ----------
 
@@ -274,6 +277,8 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   GetParameterSet(iConfig);
 
   Nevents = 0;
+  NeventsBx208 = 0;
+  NeventsBx1993 = 0;
 
   // myTree = fs->make<TTree>("myTree","myTree");
 
@@ -299,16 +304,36 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hBxL1TTCasMu_v2"] = fs->make<TH1D>("hBxL1TTCasMu_v2","",nBxBins,minBx,maxBx);
   h1["hBxL1AlgoCasMu"]  = fs->make<TH1D>("hBxL1AlgoCasMu","",nBxBins,minBx,maxBx);
 
+  h1["hBxTTPCasHAD"]     = fs->make<TH1D>("hBxTTPCasHAD","",nBxBins,minBx,maxBx);
+  h1["hBxL1AlgoCasHAD"]  = fs->make<TH1D>("hBxL1AlgoCasHAD","",nBxBins,minBx,maxBx);
+
+  h2["hBxMuHTRVsOct"]  = fs->make<TH2D>("hBxMuHTRVsOct","",nBxBins,minBx,maxBx,8,-0.5,7.5);
+  h2["hBxAHTRVsOct"]   = fs->make<TH2D>("hBxAHTRVsOct","",nBxBins,minBx,maxBx,8,-0.5,7.5);
+  h2["hBxHADHTRVsOct"] = fs->make<TH2D>("hBxHADHTRVsOct","",nBxBins,minBx,maxBx,8,-0.5,7.5);
+
+
+  h2["hBxVsMeanADC"] = fs->make<TH2D>("hBxVsMeanADC","",nBxBins,minBx,maxBx,
+                                      kNCastorModules*kNCastorSectors,0,kNCastorModules*kNCastorSectors);
+  h2["hBxVsMeanADC_Nevt"] = fs->make<TH2D>("hBxVsMeanADC_Nevt","",nBxBins,minBx,maxBx,
+                                      kNCastorModules*kNCastorSectors,0,kNCastorModules*kNCastorSectors);
+
   h2["hBxL1TT"] = fs->make<TH2D>("hBxL1TT","",nBxBins,minBx,maxBx,NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5);
   h2["hBxL1Algo"] = fs->make<TH2D>("hBxL1Algo","",nBxBins,minBx,maxBx,NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
 
-  h1["hL1TTMap"] = fs->make<TH1D>("hL1TTMap","",NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5);
-  h1["hL1AlgoMap"] = fs->make<TH1D>("hL1AlgoMap","",NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
+  h1["hL1TTMap"]       = fs->make<TH1D>("hL1TTMap","",NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5);
+  h1["hL1AlgoMap"]     = fs->make<TH1D>("hL1AlgoMap","",NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
+  h2["hL1TTVsAlgoMap"] = fs->make<TH2D>("hL1TTVsAlgoMap","",NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5,
+                                                            NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5);
+  h2["hL1TTVsTTMap"]   = fs->make<TH2D>("hL1TTVsTTMap","",NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5,
+                                                          NTECHTRIGBITS,-0.5,NTECHTRIGBITS-0.5);
+  h2["hAlgoVsAlgoMap"] = fs->make<TH2D>("hAlgoVsAlgoMap","",NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5,
+                                                            NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
 
   h1["hTTPMuNTrigA"] = fs->make<TH1D>("hTTPMuNTrigA","",9,-0.5,8.5);
 
   h1["hTsTTPCasMuWhileL1TTCasMu"]   = fs->make<TH1D>("hTsTTPCasMuWhileL1TTCasMu","",10,-3.5,6.5);
   h1["hTsTTPCasMuWhileL1AlgoCasMu"] = fs->make<TH1D>("hTsTTPCasMuWhileL1AlgoCasMu","",10,-3.5,6.5);
+  h1["hTsTTPCasHADWhileL1AlgoCasHAD"] = fs->make<TH1D>("hTsTTPCasHADWhileL1AlgoCasHAD","",10,-3.5,6.5);
 
   char buf[128];
   for(int ioct=0; ioct<8; ioct++) {
@@ -324,10 +349,18 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
     for(unsigned int imod=0; imod<kNCastorModules; imod++) {
       sprintf(buf2,"hADC_sec%d_mod%d",isec,imod);
-      h1[buf2] = fs->make<TH1D>(buf2,"",NALGOTRIGBITS,-0.5,NALGOTRIGBITS-0.5);
+      h1[buf2] = fs->make<TH1D>(buf2,"",128,-0.5,128-0.5);
     }
 
     sprintf(buf2,"hMeanADC_sec%d",isec);
+    h1[buf2] = fs->make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
+    h1[buf2]->Sumw2();
+
+    sprintf(buf2,"hMeanADC_sec%d_Bx208",isec);
+    h1[buf2] = fs->make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
+    h1[buf2]->Sumw2();
+
+    sprintf(buf2,"hMeanADC_sec%d_Bx1993",isec);
     h1[buf2] = fs->make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
     h1[buf2]->Sumw2();
   }
@@ -341,6 +374,16 @@ CastorTTPTest::~CastorTTPTest()
    // (e.g. close files, deallocate resources etc.)
 
 }
+
+
+
+
+
+
+
+
+
+
 
 
 //
@@ -366,6 +409,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   // if( evtlumi <= 15 ) return;
 
   Nevents++;
+  if( evtbx == 208 ) NeventsBx208++;
+  else if( evtbx == 1993 ) NeventsBx1993++;
 
   h1["hEvtRunNbr"]->Fill(evtrun);
   h1["hEvtLumi"]->Fill(evtlumi);
@@ -379,7 +424,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         
     int digi_sector = digi.id().sector() - 1;
     int digi_module = digi.id().module() - 1;
-    
+    int digi_channel = digi_sector*14 + digi_module;
+
     for(int its=0; its<6; its++) {      
       char buf2[128];
       sprintf(buf2,"hADC_sec%d_mod%d",digi_sector,digi_module);
@@ -387,6 +433,18 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       
       sprintf(buf2,"hMeanADC_sec%d",digi_sector);
       h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );
+
+      if( evtbx == 208 ) {
+        sprintf(buf2,"hMeanADC_sec%d_Bx208",digi_sector);
+        h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );      
+      }
+      else if( evtbx == 1993 ) {
+        sprintf(buf2,"hMeanADC_sec%d_Bx1993",digi_sector);
+        h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );      
+      }
+
+      h2["hBxVsMeanADC"]->Fill( (evtbx-4+its)%3564, digi_channel, digi[its].adc() );
+      h2["hBxVsMeanADC_Nevt"]->Fill( (evtbx-4+its)%3564, digi_channel, 1 );
     }
   }
   
@@ -427,9 +485,16 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
           h1["hBxMuOct"]->Fill(evtbx+tsshift);
           fillmuocttrig = false;
         }
+
+        h2["hBxMuHTRVsOct"]->Fill(evtbx+tsshift,ioct);
       }
     
-      if( trigger.octantsA[ioct] ) iOctTrigA++;
+      if( trigger.octantsA[ioct] ) {
+        iOctTrigA++;
+      }
+
+      if( !trigger.octantsA[ioct] )
+        h2["hBxAHTRVsOct"]->Fill(evtbx+tsshift,ioct);
 
       if( !trigger.octantsA[ioct] ) {
         sprintf(buf,"hBxTotEOct_%d",ioct);
@@ -443,6 +508,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
         h1["hOctATrig"]->Fill(ioct);
       }
+
+      if( trigger.octantsHADveto[ioct] )
+        h2["hBxHADHTRVsOct"]->Fill(evtbx+tsshift,ioct);
 
       if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] ) {  
         htr_ttp_diff_print = true;
@@ -460,6 +528,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       h1["hRelBxTTPCasMu"]->Fill(tsshift);
       h1["hTTPMuNTrigA"]->Fill(iOctTrigA);
     }
+
+    if( trigger.TTPout[2] && tsshift == 0 )
+      h1["hBxTTPCasHAD"]->Fill(evtbx+tsshift);
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
@@ -506,10 +577,17 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   for(unsigned int ibit=0; ibit<NTECHTRIGBITS; ibit++) {
     h1["hL1TTMap"]->Fill(ibit,TechTrigWord[ibit]);
     h2["hBxL1TT"]->Fill(evtbx,ibit,TechTrigWord[ibit]);
+    for(unsigned int itt=0; itt<NTECHTRIGBITS; itt++)
+      h2["hL1TTVsTTMap"]->Fill(ibit,itt,TechTrigWord[ibit]*TechTrigWord[itt]);
   }
   for(unsigned int ibit=0; ibit<NALGOTRIGBITS; ibit++) {
     h1["hL1AlgoMap"]->Fill(ibit,AlgoTrigWord[ibit]);
     h2["hBxL1Algo"]->Fill(evtbx,ibit,AlgoTrigWord[ibit]);
+
+    for(unsigned int itt=0; itt<NTECHTRIGBITS; itt++)
+      h2["hL1TTVsAlgoMap"]->Fill(ibit,itt,AlgoTrigWord[ibit]*TechTrigWord[itt]);
+    for(unsigned int ialg=0; ialg<NALGOTRIGBITS; ialg++)
+      h2["hAlgoVsAlgoMap"]->Fill(ibit,ialg,AlgoTrigWord[ibit]*AlgoTrigWord[ialg]);
   }
 
   if( AlgoTrigWord[102] ) {
@@ -518,6 +596,15 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
       if( trigger.TTPout[3] ) h1["hTsTTPCasMuWhileL1AlgoCasMu"]->Fill(tsshift);
       else h1["hTsTTPCasMuWhileL1AlgoCasMu"]->Fill(-1000);
+    }
+  }
+
+  if( AlgoTrigWord[100] ) {
+    h1["hBxL1AlgoCasHAD"]->Fill(evtbx);
+    for(int tsshift = -2; tsshift < 6; tsshift++) {
+      const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+      if( trigger.TTPout[2] ) h1["hTsTTPCasHADWhileL1AlgoCasHAD"]->Fill(tsshift);
+      else h1["hTsTTPCasHADWhileL1AlgoCasHAD"]->Fill(-1000);
     }
   }
 
@@ -531,6 +618,26 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ------------ methods to get detector collections --------------------------------------
 void
 CastorTTPTest::GetParameterSet(const edm::ParameterSet& iConfig)
@@ -538,6 +645,7 @@ CastorTTPTest::GetParameterSet(const edm::ParameterSet& iConfig)
   // define collections
   debugInfo = iConfig.getParameter<bool>("debugInfo");
   show_trigger_menu = iConfig.getParameter<bool>("ShowTriggerMenu");
+  new_TTPinput_coding = iConfig.getParameter<bool>("NewTTPinputCoding");
 }
 
 bool 
@@ -631,6 +739,15 @@ unsigned long int
 CastorTTPTest::CreateTTPBitWord(const MyCastorTrig& trigger, const int& tpg)
 {
   std::bitset<4> Bits;
+
+  if( new_TTPinput_coding ) {
+    Bits[0] = !trigger.octantsEM[tpg];
+    Bits[1] = !trigger.octantsA[tpg];
+    Bits[2] = trigger.octantsHADveto[tpg];
+    Bits[3] = trigger.octantsMuon[tpg];    
+
+    return Bits.to_ulong();
+  }
 
   Bits[0] = trigger.octantsEM[tpg];
   // needs to be inverted because veto
@@ -856,7 +973,15 @@ CastorTTPTest::endJob()
   for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
     sprintf(buf2,"hMeanADC_sec%d",isec);
     h1[buf2]->Scale(1./(double)Nevents);
+
+    sprintf(buf2,"hMeanADC_sec%d_Bx208",isec);
+    h1[buf2]->Scale(1./(double)NeventsBx208);
+
+    sprintf(buf2,"hMeanADC_sec%d_Bx1993",isec);
+    h1[buf2]->Scale(1./(double)NeventsBx1993);
   }
+
+  h2["hBxVsMeanADC"]->Divide(h2["hBxVsMeanADC_Nevt"]);
 }
 
 // ------------ method called when starting to processes a run  ------------
