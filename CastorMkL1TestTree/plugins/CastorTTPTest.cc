@@ -263,6 +263,9 @@ const unsigned int kMuonThresholdTableAdc[16][12] =
     {10,11,11,10,11,10,11,11,11,12,10,10}   // 16
   };
 
+// needs to be taken times 2.7
+const double kLookUpTableADCtoCharge[128] = { 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,18,20,22,24,26,28,31,34,37,40,43,47,51,56,61,66,61,66,71,76,81,86,91,96,101,106,111,116,121,126,131,138,148,158,168,178,188,198,211,226,241,256,273,293,313,336,361,386,361,386,411,436,461,486,511,536,561,586,611,636,661,686,711,748,798,848,898,948,998,1048,1111,1186,1261,1336,1423,1523,1623,1736,1861,1986,1861,1986,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047,2047 };
+
 //
 // static data member definitions
 //
@@ -335,6 +338,8 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hTsTTPCasMuWhileL1AlgoCasMu"] = fs->make<TH1D>("hTsTTPCasMuWhileL1AlgoCasMu","",10,-3.5,6.5);
   h1["hTsTTPCasHADWhileL1AlgoCasHAD"] = fs->make<TH1D>("hTsTTPCasHADWhileL1AlgoCasHAD","",10,-3.5,6.5);
 
+  h2["hHadSumVsOct"] = fs->make<TH2D>("hHadSumVsOct","",100,0,50000,8,0,8);
+
   char buf[128];
   for(int ioct=0; ioct<8; ioct++) {
     sprintf(buf,"hBxMuOct_%d",ioct);
@@ -406,7 +411,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int evtlumi = iEvent.luminosityBlock();
   int evtrun  = iEvent.id().run();
 
-  // if( evtlumi <= 15 ) return;
+  // if( evtlumi <= 57 ) return;
 
   Nevents++;
   if( evtbx == 208 ) NeventsBx208++;
@@ -417,7 +422,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
 
   h1["hBxAllEvt"]->Fill(evtbx);
 
-  
+  double ChargeHadSum[16][6];
+  memset(ChargeHadSum, 0, sizeof(ChargeHadSum));
+
   CastorDigiCollection::const_iterator const_iterator_digi;
   for(const_iterator_digi = digicoll->begin(); const_iterator_digi != digicoll->end(); const_iterator_digi++) {
     const CastorDataFrame& digi = *const_iterator_digi;
@@ -427,6 +434,10 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     int digi_channel = digi_sector*14 + digi_module;
 
     for(int its=0; its<6; its++) {      
+      if( digi_module > 1 && digi_module < 12 ) {
+        ChargeHadSum[digi_sector][its] += kLookUpTableADCtoCharge[digi[its].adc()]*2.7;
+      }
+
       char buf2[128];
       sprintf(buf2,"hADC_sec%d_mod%d",digi_sector,digi_module);
       h1[buf2]->Fill( digi[its].adc() );
@@ -489,8 +500,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         h2["hBxMuHTRVsOct"]->Fill(evtbx+tsshift,ioct);
       }
     
-      if( trigger.octantsA[ioct] ) {
-        iOctTrigA++;
+      if( trigger.octantsA[ioct] ) {        iOctTrigA++;
       }
 
       if( !trigger.octantsA[ioct] )
@@ -509,8 +519,15 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         h1["hOctATrig"]->Fill(ioct);
       }
 
-      if( trigger.octantsHADveto[ioct] )
+      if( trigger.octantsHADveto[ioct] ) {
         h2["hBxHADHTRVsOct"]->Fill(evtbx+tsshift,ioct);
+
+        if( tsshift==0 ) {
+          int its = 4 + tsshift;
+          double HadSum = std::max(ChargeHadSum[ioct*2][its],ChargeHadSum[ioct*2+1][its]);
+          h2["hHadSumVsOct"]->Fill(HadSum,ioct);
+        }
+      }
 
       if( trigger.TTP_Bits[ioct] != trigger.TPGa_data_Bits[ioct] ) {  
         htr_ttp_diff_print = true;
@@ -526,10 +543,10 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     }
     if( trigger.TTPout[3] ) {
       h1["hRelBxTTPCasMu"]->Fill(tsshift);
-      h1["hTTPMuNTrigA"]->Fill(iOctTrigA);
+      if( tsshift == 0 ) h1["hTTPMuNTrigA"]->Fill(iOctTrigA);
     }
 
-    if( trigger.TTPout[2] && tsshift == 0 )
+    if( trigger.TTPout[2] )
       h1["hBxTTPCasHAD"]->Fill(evtbx+tsshift);
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
@@ -668,11 +685,6 @@ CastorTTPTest::GetCollections(const edm::Event& iEvent)
     return false;
   }
 
-  if( digicoll->size() != 224 ) {
-    edm::LogWarning(" CastorDigiCollection ") << " CastorDigiCollection has NOT 224 size " << std::endl;
-    return false;
-  }
-
   try{ iEvent.getByLabel("castorDigis", castortpg); }
   catch(...) { edm::LogWarning(" CastorTrigPrimDigiCollection ") << " Cannot get CastorTrigPrimDigiCollection " << std::endl; }
   
@@ -686,6 +698,13 @@ CastorTTPTest::GetCollections(const edm::Event& iEvent)
     edm::LogWarning(" GTReadoutRecord ") << " Cannot read gtReadoutRecord " << std::endl;
     return false;
   };
+
+
+  if( digicoll->size() != 224 ) {
+    edm::LogWarning(" CastorDigiCollection ") << " CastorDigiCollection has NOT 224 size " << std::endl;
+    return false;
+  }
+
 
   return true;
 }
