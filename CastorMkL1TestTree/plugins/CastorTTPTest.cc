@@ -25,6 +25,7 @@
 #include <map>
 #include <bitset>
 #include <string>
+#include <sstream> 
 
 // include root files
 #include "TH1.h"
@@ -212,11 +213,16 @@ class CastorTTPTest : public edm::EDAnalyzer {
       L1GtUtils m_l1GtUtils;
       bool show_trigger_menu;
       bool new_TTPinput_coding;
+
       std::map<int,std::string> L1TT_Menu;
       std::map<int,std::string> L1Algo_Menu;
+
       unsigned int Nevents;
       unsigned int NeventsBx208;
       unsigned int NeventsBx1993;
+
+      unsigned int NmuonEvents;
+      unsigned int iMuonEvents;
 
       // --------- input labels for collections ----------
 
@@ -282,6 +288,8 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   Nevents = 0;
   NeventsBx208 = 0;
   NeventsBx1993 = 0;
+  NmuonEvents = 100;
+  iMuonEvents = 0;
 
   // myTree = fs->make<TTree>("myTree","myTree");
 
@@ -337,6 +345,7 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   h1["hTsTTPCasMuWhileL1TTCasMu"]   = fs->make<TH1D>("hTsTTPCasMuWhileL1TTCasMu","",10,-3.5,6.5);
   h1["hTsTTPCasMuWhileL1AlgoCasMu"] = fs->make<TH1D>("hTsTTPCasMuWhileL1AlgoCasMu","",10,-3.5,6.5);
   h1["hTsTTPCasHADWhileL1AlgoCasHAD"] = fs->make<TH1D>("hTsTTPCasHADWhileL1AlgoCasHAD","",10,-3.5,6.5);
+  h1["hTsTTPCasHADWhileL1TTCasHAD"]   = fs->make<TH1D>("hTsTTPCasHADWhileL1TTCasHAD","",10,-3.5,6.5);
 
   h2["hHadSumVsOct"] = fs->make<TH2D>("hHadSumVsOct","",100,0,50000,8,0,8);
 
@@ -350,25 +359,40 @@ CastorTTPTest::CastorTTPTest(const edm::ParameterSet& iConfig)
   }
   h1["hOctATrig"] = fs->make<TH1D>("hOctATrig","",8,0,8);
 
-  char buf2[128];
+
+  TFileDirectory ADCplots = fs->mkdir("ADCplots");
+
+
   for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
+    char buf2[128];
     for(unsigned int imod=0; imod<kNCastorModules; imod++) {
       sprintf(buf2,"hADC_sec%d_mod%d",isec,imod);
-      h1[buf2] = fs->make<TH1D>(buf2,"",128,-0.5,128-0.5);
+      h1[buf2] = ADCplots.make<TH1D>(buf2,"",128,-0.5,128-0.5);
     }
 
     sprintf(buf2,"hMeanADC_sec%d",isec);
-    h1[buf2] = fs->make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
+    h1[buf2] = ADCplots.make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
     h1[buf2]->Sumw2();
 
     sprintf(buf2,"hMeanADC_sec%d_Bx208",isec);
-    h1[buf2] = fs->make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
+    h1[buf2] = ADCplots.make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
     h1[buf2]->Sumw2();
 
     sprintf(buf2,"hMeanADC_sec%d_Bx1993",isec);
-    h1[buf2] = fs->make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
+    h1[buf2] = ADCplots.make<TH1D>(buf2,"",kNCastorModules*10,-0.5,kNCastorModules*10-0.5);
     h1[buf2]->Sumw2();
   }
+
+  TFileDirectory MuonPlots = fs->mkdir("MuonPlots");
+
+
+  for(unsigned int i=0; i<NmuonEvents; i++) {
+    char buf2[128];
+    sprintf(buf2,"hMuonEvent_%d",i);
+    h2[buf2] = MuonPlots.make<TH2D>(buf2,"",kNCastorModules,-0.5,kNCastorModules-0.5,kNCastorSectors,-0.5,kNCastorSectors-0.5);
+  }
+
+  fs->cd();
 }
 
 
@@ -411,7 +435,7 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int evtlumi = iEvent.luminosityBlock();
   int evtrun  = iEvent.id().run();
 
-  // if( evtlumi <= 57 ) return;
+  // if( evtlumi > 15 ) return;
 
   Nevents++;
   if( evtbx == 208 ) NeventsBx208++;
@@ -425,6 +449,9 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   double ChargeHadSum[16][6];
   memset(ChargeHadSum, 0, sizeof(ChargeHadSum));
 
+  unsigned int DigiADC[16][14];
+  memset(DigiADC, 0, sizeof(DigiADC));
+
   CastorDigiCollection::const_iterator const_iterator_digi;
   for(const_iterator_digi = digicoll->begin(); const_iterator_digi != digicoll->end(); const_iterator_digi++) {
     const CastorDataFrame& digi = *const_iterator_digi;
@@ -432,19 +459,18 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
     int digi_sector = digi.id().sector() - 1;
     int digi_module = digi.id().module() - 1;
     int digi_channel = digi_sector*14 + digi_module;
+    for(int its=0; its<6; its++) {
+      if( its==4 ) DigiADC[digi_sector][digi_module] = digi[its].adc();
 
-    for(int its=0; its<6; its++) {      
       if( digi_module > 1 && digi_module < 12 ) {
         ChargeHadSum[digi_sector][its] += kLookUpTableADCtoCharge[digi[its].adc()]*2.7;
       }
-
       char buf2[128];
       sprintf(buf2,"hADC_sec%d_mod%d",digi_sector,digi_module);
       h1[buf2]->Fill( digi[its].adc() );
       
       sprintf(buf2,"hMeanADC_sec%d",digi_sector);
       h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );
-
       if( evtbx == 208 ) {
         sprintf(buf2,"hMeanADC_sec%d_Bx208",digi_sector);
         h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );      
@@ -453,12 +479,10 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         sprintf(buf2,"hMeanADC_sec%d_Bx1993",digi_sector);
         h1[buf2]->Fill( 10*digi_module + its, digi[its].adc() );      
       }
-
       h2["hBxVsMeanADC"]->Fill( (evtbx-4+its)%3564, digi_channel, digi[its].adc() );
       h2["hBxVsMeanADC_Nevt"]->Fill( (evtbx-4+its)%3564, digi_channel, 1 );
     }
   }
-  
 
 
   std::vector< MyCastorTrig > castorTrigger; castorTrigger.clear();
@@ -467,6 +491,8 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
   int ts_tpg_offset  = 0; // ts of tpg used wrt SOI
   int ts_digi_offset = 4; // ts of digi compared to ttp=0
   const HcalTTPDigi t = (const HcalTTPDigi)(*(castorttp->begin()));
+
+  std::stringstream ss; ss << "muon_oct_";
 
   // for(int tsshift = -2; tsshift < 6; tsshift++){
   // change from 6 to 2 because with a ts_digi_offset of 4 tsshift=2 means look at digi ts 6 which is already the last one
@@ -498,9 +524,12 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
         }
 
         h2["hBxMuHTRVsOct"]->Fill(evtbx+tsshift,ioct);
+
+        if( tsshift==0 ) ss << ioct << "_";
       }
     
-      if( trigger.octantsA[ioct] ) {        iOctTrigA++;
+      if( trigger.octantsA[ioct] ) { 
+        iOctTrigA++;
       }
 
       if( !trigger.octantsA[ioct] )
@@ -540,18 +569,30 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
                   << " => TTP Muon trigger with tsshift:" << trigger.sample << std::endl;
       }
       h1["hBxTTPCasMu"]->Fill(evtbx+tsshift);
+
+      char buf[128];
+      if( iMuonEvents < NmuonEvents ) {
+        sprintf(buf,"hMuonEvent_%d",iMuonEvents);
+        for(unsigned int isec=0; isec<kNCastorSectors; isec++) {
+          for(unsigned int imod=0; imod<kNCastorModules; imod++) {
+            if( !(isec==1 && imod==9) ) h2[buf]->Fill(imod,isec,DigiADC[isec][imod]);
+          }
+        }
+        h2[buf]->SetTitle(ss.str().c_str());
+        iMuonEvents++;
+      }
     }
     if( trigger.TTPout[3] ) {
       h1["hRelBxTTPCasMu"]->Fill(tsshift);
       if( tsshift == 0 ) h1["hTTPMuNTrigA"]->Fill(iOctTrigA);
     }
 
-    if( trigger.TTPout[2] )
+    if( trigger.TTPout[2] && tsshift == 0 )
       h1["hBxTTPCasHAD"]->Fill(evtbx+tsshift);
 
     // region for CastorTrigPrimDigiCollection is just from -2 to 1
     if( tsshift >= -2 && tsshift <= 1 ) {
-      if(htr_ttp_diff_print) {
+      if(htr_ttp_diff_print && debugInfo ) {
         std::cout << "*** In Event:" << evtnbr << " Lumi:" << evtlumi
                   << " => TTP Input != HTR output with tsshift:" << tsshift << std::endl;
         trigger.print();
@@ -633,6 +674,14 @@ CastorTTPTest::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup)
       else h1["hTsTTPCasMuWhileL1TTCasMu"]->Fill(-1000);
     }
   }
+
+  if( TechTrigWord[58] ) {
+    for(int tsshift = -2; tsshift < 6; tsshift++) {
+      const MyCastorTrig trigger = GetTTPperTSshift(t,tsshift,ttp_offset,ts_tpg_offset);
+      if( trigger.TTPout[2] ) h1["hTsTTPCasHADWhileL1TTCasHAD"]->Fill(tsshift);
+      else h1["hTsTTPCasHADWhileL1TTCasHAD"]->Fill(-1000);
+    }
+  }
 }
 
 
@@ -708,6 +757,11 @@ CastorTTPTest::GetCollections(const edm::Event& iEvent)
 
   return true;
 }
+
+
+
+
+
 
 
 MyCastorTrig 
