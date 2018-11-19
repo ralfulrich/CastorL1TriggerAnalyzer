@@ -80,8 +80,8 @@ process.GlobalTag.globaltag = 'GR_E_V47::All'
 #################################################################################################################################
 #################################################################################################################################
 process.castorl1test = cms.EDAnalyzer('CastorTTPTest',
-    debugInfo = cms.bool(False),
-    ShowTriggerMenu = cms.bool(False),
+    debugInfo = cms.bool(True),
+    ShowTriggerMenu = cms.bool(True),
 
     # Alan changed it on 6.June see also http://cmsonline.cern.ch/cms-elog/858046
     NewTTPinputCoding = cms.bool(True)
